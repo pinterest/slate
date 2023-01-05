@@ -1,0 +1,5 @@
+bin/
+lib/
+.eggs/
+.Python
+*egg*

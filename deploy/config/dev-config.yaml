@@ -1,0 +1,29 @@
+server:
+  gzip:
+    enabled: false
+  applicationConnectors:
+  - type: http
+    port: 8090
+  adminConnectors: []
+  requestLog:
+    appenders: []
+openTsdbClientConfig:
+  host: localhost
+  port: 18126
+taskConfigurationDirectory: /tmp/slate/config/taskconfigs
+stateStoreConfigPath: /tmp/slate/config/dev-statestoreconfig.properties
+recipeStoreConfigPath: /tmp/slate/config/dev-recipestoreconfig.properties
+# Database settings.
+resourceDatabase:
+  driverClass: com.mysql.cj.jdbc.Driver
+  user: slateuser
+  password: slate1_passWord
+  url: jdbc:mysql://localhost:3306/slate
+validationConfigPath: /tmp/slate/config/dev-validation.properties
+taskTmpDirectory: /tmp/slate/tasktmp
+graphExecutionQueueConfigPath: /tmp/slate/config/dev-graphexecutionqueue.properties
+auditSinkConfigPath: /tmp/slate/config/dev-auditsink.properties
+enableDevelopment: true
+activateIgnoreRD: false
+satelliteServerUrls:
+  - http://localhost:8080

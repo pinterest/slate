@@ -1,0 +1,183 @@
+{
+	"clusterLConfigDirectory": "/tmp/slate/data/pubsub",
+	"backfillDumpDir": "/tmp/slate_data/pubsub_backfill/",
+	"skipMetrics": true,
+	"kafkaClusterMap": {
+		"us-east-1": {
+			"organic": {
+				"prod": {
+					"datakafka08": {
+						"brokersetExclusionRegex": [
+							"_internal",
+							".*B6_P6_0",
+							".*B6_P6_1",
+							".*B6_P30_0",
+							".*B6_P60_0",
+							".*B6_P64_0",
+							".*B12_P12_0",
+							".*B12_P60_0",
+							".*B12_P120_0",
+							".*B15_P24_0",
+							".*B15_P30_0",
+							".*B15_P30_4",
+							".*B18_P32_0",
+							".*B30_P30_0",
+							".*B30_P30_1",
+							".*B30_P30_2",
+							".*B30_P60_0",
+							".*B30_P60_1",
+							".*B30_P240_0"
+						]
+					}
+				},
+				"dev": {
+					"testkafka10": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			},
+			"discovery": {
+				"prod": {
+					"discoverykafka": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				},
+				"dev": {
+				    "testkafka10": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			},
+			"m10n": {
+				"prod": {
+					"m10nkafka": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				},
+				"integ": {
+					"m10nstagingkafka": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				},
+				"dev": {
+					"m10nstagingkafka": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			},
+			"m10nrt": {
+				"prod": {
+					"m10nrealtimekafka02": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				},
+				"integ": {
+					"m10nrealtimedevkafka02": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				},
+				"dev": {
+					"m10nrealtimedevkafka02": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			},
+			"logsearch": {
+				"prod": {
+					"metricskafka07": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			}
+		},
+		"eu-west-1": {
+			"organic": {
+				"prod": {
+					"datakafka01": {
+						"brokersetExclusionRegex": [
+							"_internal",
+							".*B6_P6_0",
+							".*B6_P6_1",
+							".*B6_P30_0",
+							".*B6_P60_0",
+							".*B6_P64_0",
+							".*B12_P12_0",
+							".*B12_P60_0",
+							".*B12_P120_0",
+							".*B15_P24_0",
+							".*B15_P30_0",
+							".*B15_P30_4",
+							".*B18_P32_0",
+							".*B30_P30_0",
+							".*B30_P30_1",
+							".*B30_P30_2",
+							".*B30_P60_0",
+							".*B30_P60_1",
+							".*B30_P240_0"
+						]
+					}
+				}
+			},
+			"m10n": {
+				"prod": {
+					"m10nkafka": {
+						"brokersetExclusionRegex": [
+							"_internal"
+						]
+					}
+				}
+			}
+		}
+	},
+	"capacityMetricsApiMap": {
+		"us-east-1": "https://statsboard.pinadmin.com/api/v2/query?start=-21m&target=max%3A10m-max-none%3Atc.kafka.df.mbytes.used.*%7Bcell_id%3Daws-us-east-1%2Cinstance_type%3D*%2Chost%3D*%7D&alias=disk_raw&target=sum%3A10m-sum-none%3Atc.kafka.stats.global.kafka.server.brokertopicmetrics.mbytesinpersec.perTopic.OneMinuteRate%7Bcell_id%3Daws-us-east-1%2Cinstance_type%3D*%2Chost%3D*%2Ckafka_cluster%3D*%7D&alias=network_raw&cmd=disk%20%3D%20disk_raw.rolling(%27max%27%2C%20%271d%27)%0Anetwork%20%3D%20network_raw.rolling(%27sum%27%2C%271d%27)%2F60%2F24%0Areturn%20network%2C%20disk",
+		"eu-west-1": "https://statsboard.pinadmin.com/api/v2/query?start=-21m&target=max%3A10m-max-none%3Atc.kafka.df.mbytes.used.*%7Bcell_id%3Daws-eu-west-1%2Cinstance_type%3D*%2Chost%3D*%7D&alias=disk_raw&target=sum%3A10m-sum-none%3Atc.kafka.stats.global.kafka.server.brokertopicmetrics.mbytesinpersec.perTopic.OneMinuteRate%7Bcell_id%3Daws-eu-west-1%2Cinstance_type%3D*%2Chost%3D*%2Ckafka_cluster%3D*%7D&alias=network_raw&cmd=disk%20%3D%20disk_raw.rolling(%27max%27%2C%20%271d%27)%0Anetwork%20%3D%20network_raw.rolling(%27sum%27%2C%271d%27)%2F60%2F24%0Areturn%20network%2C%20disk"
+	},
+	"instanceTypeConfig": {
+		"d2.2xlarge": {
+			"network": 200,
+			"disk": 12288000,
+			"disk_utilization": 0.7
+		},
+		"i3.2xlarge": {
+			"network": 600,
+			"disk": 1945600,
+			"disk_utilization": 0.7
+		},
+		"i3.4xlarge": {
+			"network": 600,
+			"disk": 3891200,
+			"disk_utilization": 0.7
+		},
+		"i3.8xlarge": {
+			"network": 600,
+			"disk": 7782400,
+			"disk_utilization": 0.7
+		},
+		"i3en.2xlarge": {
+			"network": 600,
+			"disk": 1945600,
+			"disk_utilization": 0.7
+		}
+	}
+}

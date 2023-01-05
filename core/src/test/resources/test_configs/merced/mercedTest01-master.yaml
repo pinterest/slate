@@ -1,0 +1,36 @@
+pindata::profile::merced::master::kafka_transporter_topics:
+  mercedTestConfig01:
+    ensure: 'present'
+    merced_config_ownership: ''
+    topic_name: 'testKafkaTopic1'
+    hive_tables: 'hiveTable02'
+    zookeeper_connection: 'datazk001:2181,datazk002:2181,datazk003:2181,datazk004:2181,datazk005:2181,datazk007:2181/testKafkaCluster1'
+    parser_class: 'com.pinterest.merced.parser.JsonMessageParser'
+    file_daily_megabytes: 1024
+    file_compression_codec: 'org.apache.hadoop.io.compress.GzipCodec'
+    s3_bucket: 'pinlogs,pinterest-miami'
+    s3_path: 'merced_raw_logs,merced_raw_logs'
+
+  mercedTestConfig02:
+    ensure: 'present'
+    merced_config_ownership: ''
+    topic_name: 'testKafkaTopic2'
+    hive_tables: 'hiveTable02'
+    zookeeper_connection: 'datazk001:2181,datazk002:2181,datazk003:2181,datazk004:2181,datazk005:2181,datazk007:2181/testKafkaCluster1'
+    parser_class: 'com.pinterest.merced.parser.JsonMessageParser'
+    file_daily_megabytes: 1024
+    file_compression_codec: 'org.apache.hadoop.io.compress.GzipCodec'
+    s3_bucket: 'pinlogs,pinterest-miami'
+    s3_path: 'merced_raw_logs,merced_raw_logs'
+
+  mercedTestConfig03:
+    ensure: 'present'
+    merced_config_ownership: ''
+    topic_name: 'testKafkaTopic3'
+    hive_tables: 'hiveTable03'
+    zookeeper_connection: 'datazk001:2181,datazk002:2181,datazk003:2181,datazk004:2181,datazk005:2181,datazk007:2181'
+    parser_class: 'com.pinterest.merced.parser.JsonMessageParser'
+    file_daily_megabytes: 1024
+    file_compression_codec: 'org.apache.hadoop.io.compress.GzipCodec'
+    s3_bucket: 'pinlogs,pinterest-miami'
+    s3_path: 'merced_raw_logs,merced_raw_logs'
