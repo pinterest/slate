@@ -18,7 +18,7 @@ Detailed design can be found [here](docs/Design.md)
 
 - [Surya Karri](https://github.com/suryabhaskarkarri)
 
-- [J.C. Zhong](https://github.com/ambud)
+- [J.C. Zhong](https://github.com/jczhong84)
 
 ## Contributors
 
