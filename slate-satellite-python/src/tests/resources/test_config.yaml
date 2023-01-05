@@ -1,0 +1,6 @@
+slateCoreUrl: http://some_url
+enableDevelopment: true
+resourceDefinitionScanDirs:
+  - ./some_rel_dir
+taskDefinitionScanDirs:
+  - /opt/some_abs_dir

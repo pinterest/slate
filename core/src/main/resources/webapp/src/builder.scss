@@ -1,0 +1,17 @@
+.react-flow__node {
+    // border is added in code as its needed only for parent nodes.
+    // border: 1px solid grey;
+    border-radius: 4px;
+}
+
+.react-flow__node.highlight-valid-parent {
+    background-color: #95de64;
+    color: white;
+    border: 3px dashed green;    
+}
+
+.react-flow__node.highlight-invalid-parent {
+    background-color: #ffa39e;
+    color: white;
+    border: 3px dashed red;
+}
