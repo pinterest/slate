@@ -5,12 +5,6 @@ import Box from '@material-ui/core/Box';
 
 const UPDATE_FREQUENCY = 10000;
 
-const useStyles = makeStyles({
-    table: {
-        minWidth: 650,
-    },
-});
-
 export const useRowStyles = makeStyles({
     root: {
         '& > *': {
@@ -19,9 +13,7 @@ export const useRowStyles = makeStyles({
     },
 });
 
-export default function MgmtView(props) {
-    const classes = useStyles();
-
+export default function MgmtView() {
     const [allActiveExecutions, setAllActiveExecutions] = useState([]);
 
     function fetchAllActiveExecutions() {
