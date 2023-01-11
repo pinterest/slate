@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.pinterest</groupId>
 	<artifactId>slate-parent</artifactId>
-	<version>0.0.11</version>
+	<version>0.0.12</version>
 	<name>slate-parent</name>
 	<packaging>pom</packaging>
 	<properties>

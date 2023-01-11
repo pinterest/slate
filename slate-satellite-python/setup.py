@@ -17,7 +17,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='slate-satellite-python',  # Required
-    version='0.0.11',  # Required
+    version='0.0.12',  # Required
     description='slate-satellite-python',  # Optional
     long_description=long_description,  # Optional
     long_description_content_type='text/markdown',  # Optional (see note above)
