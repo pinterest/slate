@@ -679,7 +679,7 @@ public class GraphEngine {
                                      Map<String, Resource> resolvedSubGraph,
                                      Set<EdgeDefinition> set) throws PlanException {
     Set<String> childResources = proposedResource.getChildResources();
-    if (childResources == null) {
+    if (childResources == null || childResources.isEmpty()) {
       return;
     }
     if (set == null) {
