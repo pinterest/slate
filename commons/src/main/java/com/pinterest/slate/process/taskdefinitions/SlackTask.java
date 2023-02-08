@@ -38,7 +38,8 @@ import com.slack.api.methods.response.users.UsersLookupByEmailResponse;
 public class SlackTask extends TaskDefinition {
 
   private static final String INVALID_VALUE = "invalid_value";
-  private static final String EMAIL_DOMAIN = System.getenv("EMAIL_DOMAIN");
+  private static final String EMAIL_DOMAIN = System.getenv("EMAIL_DOMAIN") == null ? "admin@local"
+      : System.getenv("EMAIL_DOMAIN");
   public static final String USERNAME = "username";
   public static final String LINK = "link";
   public static final String MESSAGE = "message";

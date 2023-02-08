@@ -4,6 +4,9 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 export EMAIL_DOMAIN="<fixme>"
+export CORE_URL="http://localhost:8090"
+export LDAP_URL="localhost:636"
+export LDAP_SEARCH_SCOPE="fixme"
 export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
 
 unameOut="$(uname -s)"

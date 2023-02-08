@@ -36,10 +36,10 @@ import com.pinterest.slate.validation.ValidationException;
 
 public class LDAPUtils {
 
-  private static final String SEARCH_SCOPE = System.getProperty("LDAP_SEARCH_SCOPE");
+  private static final String SEARCH_SCOPE = System.getenv("LDAP_SEARCH_SCOPE");
   private static final Logger logger = Logger.getLogger(LDAPUtils.class.getName());
   private static final Pattern UID_EXTRACTION = Pattern.compile(".*(uid=([a-zA-Z]+),).*");
-  private static final String LDAP_URL = System.getProperty("LDAP_URL");
+  private static final String LDAP_URL = System.getenv("LDAP_URL");
 
   private LDAPUtils() {
   }
@@ -100,10 +100,6 @@ public class LDAPUtils {
     String[] attrIDs = { "cn", "member" };
     searchControls.setReturningAttributes(attrIDs);
     return searchControls;
-  }
-
-  public static void main(String[] args) throws Exception {
-    System.out.println(LDAPUtils.getLDAPMembers("ads-indexing"));
   }
 
 }

@@ -26,8 +26,9 @@ import com.pinterest.slate.process.taskdefinitions.SlackTask;
 import io.dropwizard.hibernate.UnitOfWork;
 
 public class GraphExecutor implements Runnable {
-  
-  public static final String BASE_URL = System.getProperty("CORE_URL");
+
+  public static final String BASE_URL = System.getenv("CORE_URL") == null ? "http://localhost:8090"
+      : System.getenv("CORE_URL");
   private static Logger logger = Logger.getLogger(GraphExecutor.class.getCanonicalName());
   private GraphExecutionRuntime runtime;
   private boolean enableExecution = true;
@@ -84,8 +85,7 @@ public class GraphExecutor implements Runnable {
           // notify requester that graph execution is now complete
           SlackTask.sendSlackMessage(
               "Task execution has completed with status:" + executionGraph.getStatus(), "",
-              BASE_URL + "/executions/" + executionId,
-              executionGraph.getRequester());
+              BASE_URL + "/executions/" + executionId, executionGraph.getRequester());
         }
         // update state
         runtime.update(executionGraph);

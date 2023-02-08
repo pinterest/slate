@@ -53,8 +53,10 @@ public class HttpUtils {
 
   private static final String MESH_PREFIX = "mesh://";
   private static final String JKS = "JKS";
-  public static final String KS_PATH = System.getProperty("KS_PATH");
-  public static final char[] PASSWORD = System.getProperty("KS_PASSWORD").toCharArray();
+  public static final String KS_PATH = System.getenv("KS_PATH") == null ? ""
+      : System.getenv("KS_PATH");
+  public static final char[] PASSWORD = System.getenv("KS_PASSWORD") == null ? "".toCharArray()
+      : System.getenv("KS_PASSWORD").toCharArray();
   private static final Logger logger = Logger.getLogger(HttpUtils.class.getCanonicalName());
   private static final Gson GSON = new Gson();
   public static final Pattern REQP = Pattern.compile("mesh\\:\\/\\/(?<host>[a-z\\-\\.]+)\\/.*");
