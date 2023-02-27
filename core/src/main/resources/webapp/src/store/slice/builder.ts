@@ -164,6 +164,13 @@ const builderSlice = createSlice({
                 [tabId]: staleIds,
             };
         },
+        setWorkspaceTabName: (state, action) => {
+            const { tabId, tabName } = action.payload;
+            if (state.workspaceTabs[tabId] && tabName) {
+                state.workspaceTabs = { ...state.workspaceTabs };
+                state.workspaceTabs[tabId].title = tabName;
+            }
+        },
     },
 });
 
@@ -182,6 +189,7 @@ export const {
     setContextMenuData,
     setResourceDefinitions,
     setStaleResourceIds,
+    setWorkspaceTabName,
 } = builderSlice.actions;
 
 /* ---------------------------------------- Actions ----------------------------------------- */
