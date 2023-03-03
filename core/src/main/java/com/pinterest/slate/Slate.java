@@ -200,10 +200,12 @@ public class Slate extends Application<SlateConfig> {
 
   protected void configureAuthorizationFilter(SlateConfig config,
                                               Environment environment) throws Exception {
+    /**
     AuthorizationFilter authorizer = new AuthorizationFilter();
     authorizer.configure(config);
     environment.jersey().register(authorizer);
     environment.jersey().register(RolesAllowedDynamicFeature.class);
+    */
   }
 
   private AbstractGraphExecutionQueue initializeGraphExecutionQueue(SlateConfig configuration) throws IOException,
