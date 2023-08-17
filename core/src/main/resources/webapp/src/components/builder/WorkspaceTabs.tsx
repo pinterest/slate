@@ -12,7 +12,7 @@ import { Close, AddCircle } from '@mui/icons-material';
 import { IWorkspaceTabData } from '../../store/types';
 import { useSnackBar } from '../../context/SnackbarContext';
 
-interface IWorkspaceTabsProps {}
+interface IWorkspaceTabsProps { }
 
 const TabName: React.FC<{ tabId: string; tabName: string }> = ({ tabId, tabName }) => {
     const dispatch = useDispatch();
@@ -144,7 +144,7 @@ const WorkspaceTabs: React.FC<IWorkspaceTabsProps> = () => {
     }, [workspaceTabs, Object.keys(workspaceTabs), selectedTabId]);
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '80%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', width: ['20vw', '35vw', '45vw', '60vw', 'calc(90vw - 350px)'] }}>
             {tabDom}
             <IconButton
                 color="primary"
