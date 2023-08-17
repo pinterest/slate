@@ -26,7 +26,8 @@ body {
 ::placeholder {
   /* Chrome, Firefox, Opera, Safari 10.1+ */
   color: white;
-  opacity: 1; /* Firefox */
+  opacity: 1;
+  /* Firefox */
 }
 
 .react-autosuggest__input--focused {
@@ -40,6 +41,7 @@ body {
 
 .react-autosuggest__suggestions-container {
   display: none;
+  max-height: 500px;
 }
 
 .react-autosuggest__suggestions-container--open {

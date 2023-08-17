@@ -5,7 +5,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, IconButton, Tooltip
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-interface IResourceBarProps {}
+interface IResourceBarProps { }
 
 const ResourceBar: React.FC<IResourceBarProps> = () => {
     const { resourceDefinitions } = useSelector(selectBuilderState);
@@ -21,7 +21,7 @@ const ResourceBar: React.FC<IResourceBarProps> = () => {
         return null;
     }
     return (
-        <Box id="resourceBar" style={{ maxWidth: '100%', overflow: 'wrap' }}>
+        <Box id="resourceBar" style={{ maxWidth: '100%', maxHeight: '100%', overflowY: 'scroll' }}>
             {tags.map((tag) => (
                 <Accordion key={tag} defaultExpanded={true}>
                     <AccordionSummary
