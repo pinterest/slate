@@ -69,8 +69,9 @@ public class SlackTask extends TaskDefinition {
                        LifecycleProcess process,
                        JsonObject processContext,
                        JsonObject taskContext) throws Exception {
-    if (!taskContext.has(USERNAME) || taskContext.get(USERNAME) == null) {
-      throw new Exception("Missing username to send message to");
+    if ((!taskContext.has(USERNAME) || taskContext.get(USERNAME) == null)
+            && (!taskContext.has(CHANNEL) || taskContext.get(CHANNEL) == null)) {
+      throw new Exception("Missing username or channel to send message to");
     }
     if (!taskContext.has(TITLE)) {
       throw new Exception("Missing title");
@@ -89,11 +90,29 @@ public class SlackTask extends TaskDefinition {
     String title = getStringOrError(taskContext, TITLE);
     String message = getStringOrError(taskContext, MESSAGE);
     String link = getStringOrDefault(taskContext, LINK, "n/a");
-    String username = getStringOrError(taskContext, USERNAME);
 
-    sendSlackMessage(title, message, link, username);
+    if (taskContext.has(USERNAME) && taskContext.get(USERNAME) != null) {
+      sendSlackMessage(title, message, link, getStringOrError(taskContext, USERNAME));
+    }
+    if (taskContext.has(CHANNEL) && taskContext.get(CHANNEL) != null) {
+      sendSlackChannelMessage(title, message, getStringOrError(taskContext, CHANNEL));
+    }
 
     return StatusUpdate.create(Status.SUCCEEDED);
+  }
+
+  public static void sendSlackChannelMessage(String title,
+                                             String message,
+                                             String channel) throws IOException, SlackApiException {
+    if (token.equals(INVALID_VALUE)) {
+      return;
+    }
+    Slack slack = Slack.getInstance();
+    ChatPostMessageResponse response =
+            slack.methods(token).chatPostMessage(req -> req.channel(channel).text("*" + title + "*\n" + message));
+    if (!response.isOk()) {
+      logger.severe(String.format("Failed to send slack message. Response: ", response.getError()));
+    }
   }
 
   public static void sendSlackMessage(String title,
