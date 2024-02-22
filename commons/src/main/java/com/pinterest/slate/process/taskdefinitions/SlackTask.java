@@ -41,6 +41,7 @@ public class SlackTask extends TaskDefinition {
   private static final String EMAIL_DOMAIN = System.getenv("EMAIL_DOMAIN") == null ? "admin@local"
       : System.getenv("EMAIL_DOMAIN");
   public static final String USERNAME = "username";
+  public static final String CHANNEL = "channel";
   public static final String LINK = "link";
   public static final String MESSAGE = "message";
   public static final String TITLE = "title";
