@@ -76,7 +76,7 @@ public class TaskApi {
     HumanTask task;
     try {
       task = ts.getHumanTaskSystem().getTask(processid, taskId);
-      if (groups.contains(task.getAssigneeGroupName())) {
+      if (containsIgnoreCase(groups, task.getAssigneeGroupName())) {
         // check if this user is allowed to take on this task
         ts.getHumanTaskSystem().updateAssignee(processid, taskId, user);
       }
@@ -105,7 +105,7 @@ public class TaskApi {
         // if the request has already been approved short circuit
         return;
       }
-      if (groups.contains(task.getAssigneeGroupName())) {
+      if (containsIgnoreCase(groups, task.getAssigneeGroupName())) {
         // user is allowed to change task status
         switch (task.getTaskType()) {
         case APPROVAL:
@@ -136,4 +136,21 @@ public class TaskApi {
     return groups;
   }
 
+  /**
+   * Check if a set contains a string, ignoring case.
+   * @param set the string set to check
+   * @param searchStr the string to search for
+   * @return true if the set contains the string, false otherwise
+   */
+  public static boolean containsIgnoreCase(Set<String> set, String searchStr) {
+    if (searchStr == null) {
+      return false;
+    }
+    for (String setStr : set) {
+      if (setStr.equalsIgnoreCase(searchStr)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
