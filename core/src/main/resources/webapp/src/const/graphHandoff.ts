@@ -1,4 +1,5 @@
-import { INodeData, TNode } from './types';
+import { utils } from '@rjsf/core';
+import { INodeData, TNode, IResourceDefinitions } from './types';
 import { NEW_NODE_ID_PREFIX } from './constants';
 
 /**
@@ -135,6 +136,44 @@ export const decodeGraphFragment = async (hash: string): Promise<ResourceMap | n
         console.error('Failed to decode graph handoff fragment', error);
         return null;
     }
+};
+
+/**
+ * Fill each resource's `desiredState` with its type's JSON-schema defaults,
+ * mirroring what the Builder form (@rjsf) injects the moment a node is opened /
+ * "Update Plan" is clicked (NewNodePrompt). A handoff-injected node otherwise
+ * skips the form entirely, so schema-defaulted-but-absent fields (e.g. a
+ * PubSubTopic's `customConfigs`) are missing — and some resource Plans
+ * dereference those fields without a null check, turning an incomplete graph
+ * into a backend 500. Applying defaults here makes a handoff node byte-for-byte
+ * equivalent to a form-built one for every resource type, not just one field.
+ *
+ * getDefaultFormState only fills gaps, so any value already supplied in the
+ * handoff payload is preserved. Resources whose type is unknown to the current
+ * definitions are passed through untouched.
+ */
+export const applyResourceDefaults = (
+    map: ResourceMap,
+    resourceDefinitions: IResourceDefinitions | null
+): ResourceMap => {
+    const defs = resourceDefinitions?.resourceMap ?? {};
+    const out: ResourceMap = {};
+    for (const [id, resource] of Object.entries(map)) {
+        const cls = resource.resourceDefinitionClass;
+        const schema = cls ? defs[cls]?.configSchema : undefined;
+        if (schema) {
+            out[id] = {
+                ...resource,
+                desiredState: utils.getDefaultFormState(schema, resource.desiredState ?? {}, schema) as Record<
+                    string,
+                    unknown
+                >,
+            };
+        } else {
+            out[id] = resource;
+        }
+    }
+    return out;
 };
 
 /**

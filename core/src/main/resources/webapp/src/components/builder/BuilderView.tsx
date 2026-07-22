@@ -13,7 +13,12 @@ import {
     setOpenResourceEditor,
 } from '../../store/slice/builder';
 import { TNode } from '../../const/types';
-import { decodeGraphFragment, hasGraphFragment, nodesFromResourceMap } from '../../const/graphHandoff';
+import {
+    applyResourceDefaults,
+    decodeGraphFragment,
+    hasGraphFragment,
+    nodesFromResourceMap,
+} from '../../const/graphHandoff';
 import TopologyBuilder from '../../topology/TopologyBuilder';
 import { useSnackBar } from '../../context/SnackbarContext';
 import { useLoadingSpinner } from '../../context/LoadingSpinnerContext';
@@ -42,14 +47,17 @@ const BuilderView: React.FC<IBuilderViewProps> = () => {
     // Hydrate a create-only graph handed off via the URL fragment (#graph=...).
     // Gated on workspaceLoaded so we run *after* TopologyBuilder's onRestore has
     // set up a consistent tabs map + selectedTabId; running during mount races
-    // that restore and the injected nodes get dropped.
+    // that restore and the injected nodes get dropped. Also gated on
+    // resourceDefinitions so applyResourceDefaults has the schemas it needs to
+    // fill defaults — otherwise the injected nodes would miss form defaults (e.g.
+    // a topic's customConfigs) and fail Plan.
     useEffect(() => {
-        if (!workspaceLoaded || hydratedFromFragmentRef.current) {
+        if (!workspaceLoaded || !resourceDefinitions || hydratedFromFragmentRef.current) {
             return;
         }
         hydratedFromFragmentRef.current = true;
         hydrateFromFragment();
-    }, [workspaceLoaded]);
+    }, [workspaceLoaded, resourceDefinitions]);
 
     const fetchResourceDefinitions = () => {
         showLoadingOverlay(true);
@@ -115,7 +123,11 @@ const BuilderView: React.FC<IBuilderViewProps> = () => {
         }
         const map = await decodeGraphFragment(window.location.hash);
         if (map) {
-            const nodes = nodesFromResourceMap(map);
+            // Populate schema defaults (mirrors the Builder form) so a handoff
+            // node matches a form-built one; otherwise fields the backend Plan
+            // dereferences (e.g. a topic's customConfigs) can be absent.
+            const hydratedMap = applyResourceDefaults(map, resourceDefinitions);
+            const nodes = nodesFromResourceMap(hydratedMap);
             dispatch(addWorkspaceTab({ makeActive: true }));
             dispatch(addNodesToWorkspace({ nodes }));
             dispatch(setNodeToEdit(null));
