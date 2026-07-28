@@ -25,7 +25,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.pinterest.slate.ui.UiAction;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.db.DataSourceFactory;
@@ -77,15 +76,14 @@ public class SlateConfig extends Configuration {
   
   private String baseMetricsUrl = "";
 
-  @Valid
-  private List<UiAction> uiActions = Collections.emptyList();
+  private Map<String, String> onboardingButton = Collections.emptyMap();
 
-  public List<UiAction> getUiActions() {
-    return uiActions;
+  public Map<String, String> getOnboardingButton() {
+    return onboardingButton;
   }
 
-  public void setUiActions(List<UiAction> uiActions) {
-    this.uiActions = uiActions == null ? Collections.emptyList() : uiActions;
+  public void setOnboardingButton(Map<String, String> onboardingButton) {
+    this.onboardingButton = onboardingButton == null ? Collections.emptyMap() : onboardingButton;
   }
 
   public String getBaseMetricsUrl() {

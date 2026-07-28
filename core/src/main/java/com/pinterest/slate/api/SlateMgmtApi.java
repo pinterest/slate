@@ -54,6 +54,12 @@ public class SlateMgmtApi {
     this.runtime = runtime;
   }
 
+  @Path("/onboarding-button")
+  @GET
+  public Map<String, String> getOnboardingButton() {
+    return config.getOnboardingButton();
+  }
+
   @Path("/isadmin")
   @GET
   public boolean isUserAdmin(@Context SecurityContext sc,
