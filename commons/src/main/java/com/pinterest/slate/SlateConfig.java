@@ -15,6 +15,7 @@
  */
 package com.pinterest.slate;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,16 @@ public class SlateConfig extends Configuration {
   private String recipeStoreConfigPath;
   
   private String baseMetricsUrl = "";
+
+  private Map<String, String> onboardingButton = Collections.emptyMap();
+
+  public Map<String, String> getOnboardingButton() {
+    return onboardingButton;
+  }
+
+  public void setOnboardingButton(Map<String, String> onboardingButton) {
+    this.onboardingButton = onboardingButton == null ? Collections.emptyMap() : onboardingButton;
+  }
 
   public String getBaseMetricsUrl() {
     return baseMetricsUrl;
