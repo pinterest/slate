@@ -15,6 +15,7 @@
  */
 package com.pinterest.slate;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.pinterest.slate.ui.UiAction;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.db.DataSourceFactory;
@@ -74,6 +76,17 @@ public class SlateConfig extends Configuration {
   private String recipeStoreConfigPath;
   
   private String baseMetricsUrl = "";
+
+  @Valid
+  private List<UiAction> uiActions = Collections.emptyList();
+
+  public List<UiAction> getUiActions() {
+    return uiActions;
+  }
+
+  public void setUiActions(List<UiAction> uiActions) {
+    this.uiActions = uiActions == null ? Collections.emptyList() : uiActions;
+  }
 
   public String getBaseMetricsUrl() {
     return baseMetricsUrl;

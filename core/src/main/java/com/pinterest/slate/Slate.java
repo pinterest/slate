@@ -36,6 +36,7 @@ import com.pinterest.slate.api.RecipeApi;
 import com.pinterest.slate.api.ResourceApi;
 import com.pinterest.slate.api.SlateMgmtApi;
 import com.pinterest.slate.api.TaskApi;
+import com.pinterest.slate.api.UiApi;
 import com.pinterest.slate.graph.AbstractExecutionDAO;
 import com.pinterest.slate.graph.AbstractGraphAuditSink;
 import com.pinterest.slate.graph.AbstractGraphExecutionQueue;
@@ -179,6 +180,7 @@ public class Slate extends Application<SlateConfig> {
     environment.jersey().register(new SlateMgmtApi(config, grt));
     environment.jersey().register(new HTSApi(hts));
     environment.jersey().register(new MetricsApi(config));
+    environment.jersey().register(new UiApi(config));
   }
 
   private AbstractRecipeStore initializeRecipeStore(SlateConfig configuration) throws Exception {
