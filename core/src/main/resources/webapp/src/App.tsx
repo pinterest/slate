@@ -11,6 +11,7 @@ import { Link as RouterLink, Navigate, Routes, Route, useParams } from 'react-ro
 import { useStyles } from './AppStyles';
 import MgmtView from './topology/MgmtView';
 import ResourceSearch from './components/common/ResourceSearch';
+import HelixUltraButton from './components/common/HelixUltraButton';
 import 'reactflow/dist/style.css';
 import './App.scss';
 
@@ -136,6 +137,7 @@ const App: React.FC<ISlateAppProps> = () => {
                     <Route path={'/mgmt'} element={<MgmtView />} />
                 </Routes>
             </Box>
+            <HelixUltraButton />
         </Box>
     );
 };
