@@ -26,6 +26,7 @@ import { WorkspaceElementsProvider } from './context/WorkspaceElementsContext';
 import Sidebar from './Sidebar';
 import { Box } from '@mui/material';
 import ReceipeModal from './recipe/RecipeModal';
+import OnboardingButton from '../common/OnboardingButton';
 
 interface IBuilderViewProps {}
 
@@ -174,6 +175,7 @@ const BuilderView: React.FC<IBuilderViewProps> = () => {
                 </ReactFlowProvider>
             </Box>
             <ReceipeModal open={searchParams.has('recipe')} recipeName={searchParams.get('recipe')} />
+            <OnboardingButton />
         </React.Fragment>
     );
 };
