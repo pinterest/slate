@@ -32,6 +32,7 @@ const statusDisplay = (status: TExecutionStatus): { label: string; color: 'defau
 const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
     const { showSnackbar } = useSnackBar();
     const approvals = useMemo(() => getExecutionApprovals(plan), [plan]);
+    const reviewPrompt = `/internal/summarize-slate-approvals ${window.location.href}`;
     const [actionableTasks, setActionableTasks] = useState<Set<string>>(new Set());
     const [actionsUnavailable, setActionsUnavailable] = useState(false);
     const [updatingTask, setUpdatingTask] = useState<null | string>(null);
@@ -105,72 +106,86 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
             });
     };
 
-    if (!approvals.length) {
-        return (
-            <Typography mt={2} align="center" variant="subtitle1">
-                No approvals are required for this execution
-            </Typography>
-        );
-    }
-
     return (
         <Box height="100%" overflow="auto" paddingTop={1}>
+            <Box display="flex" justifyContent="flex-end" marginBottom={1}>
+                <Button
+                    className="helix-ultra-button"
+                    data-button-name="Review Slate Changes"
+                    data-pre-prompt={reviewPrompt}
+                    data-initial-placeholder-text="Ask about this Slate execution"
+                    data-create-new-chat="true"
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    title="Open Helix Ultra to review this execution"
+                    sx={{ textTransform: 'none' }}
+                >
+                    Review changes
+                </Button>
+            </Box>
             {actionsUnavailable && (
                 <Alert severity="warning" sx={{ marginBottom: 1 }}>
                     Approval actions are temporarily unavailable.
                 </Alert>
             )}
-            <Stack spacing={1}>
-                {approvals.map((approval) => {
-                    const key = taskKey(approval.processId, approval.taskId);
-                    const canAct = actionableTasks.has(key);
-                    const isUpdating = updatingTask === key;
-                    const status = statusDisplay(approval.status);
+            {!approvals.length ? (
+                <Typography mt={2} align="center" variant="subtitle1">
+                    No approvals are required for this execution
+                </Typography>
+            ) : (
+                <Stack spacing={1}>
+                    {approvals.map((approval) => {
+                        const key = taskKey(approval.processId, approval.taskId);
+                        const canAct = actionableTasks.has(key);
+                        const isUpdating = updatingTask === key;
+                        const status = statusDisplay(approval.status);
 
-                    return (
-                        <Box key={key} border={1} borderColor="divider" borderRadius={1} padding={1.5}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                                <Box minWidth={0}>
-                                    <Typography variant="subtitle1">
-                                        <b>{approval.summary}</b>
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Approval group: {approval.group || 'Unknown'}
-                                    </Typography>
-                                </Box>
-                                <Chip size="small" label={status.label} color={status.color} />
-                            </Stack>
-                            {approval.description && (
-                                <Box mt={1}>
-                                    <ReactMarkdown>{approval.description}</ReactMarkdown>
-                                </Box>
-                            )}
-                            {canAct && (
-                                <Stack direction="row" spacing={1} mt={1}>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        color="success"
-                                        disabled={isUpdating}
-                                        onClick={() => updateTask(approval.processId, approval.taskId, 'SUCCEEDED')}
-                                    >
-                                        Approve
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        color="error"
-                                        disabled={isUpdating}
-                                        onClick={() => updateTask(approval.processId, approval.taskId, 'FAILED')}
-                                    >
-                                        Deny
-                                    </Button>
+                        return (
+                            <Box key={key} border={1} borderColor="divider" borderRadius={1} padding={1.5}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                                    <Box minWidth={0}>
+                                        <Typography variant="subtitle1">
+                                            <b>{approval.summary}</b>
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Approval group: {approval.group || 'Unknown'}
+                                        </Typography>
+                                    </Box>
+                                    <Chip size="small" label={status.label} color={status.color} />
                                 </Stack>
-                            )}
-                        </Box>
-                    );
-                })}
-            </Stack>
+                                {approval.description && (
+                                    <Box mt={1}>
+                                        <ReactMarkdown>{approval.description}</ReactMarkdown>
+                                    </Box>
+                                )}
+                                {canAct && (
+                                    <Stack direction="row" spacing={1} mt={1}>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="success"
+                                            disabled={isUpdating}
+                                            onClick={() => updateTask(approval.processId, approval.taskId, 'SUCCEEDED')}
+                                        >
+                                            Approve
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="error"
+                                            disabled={isUpdating}
+                                            onClick={() => updateTask(approval.processId, approval.taskId, 'FAILED')}
+                                        >
+                                            Deny
+                                        </Button>
+                                    </Stack>
+                                )}
+                            </Box>
+                        );
+                    })}
+                </Stack>
+            )}
         </Box>
     );
 };
