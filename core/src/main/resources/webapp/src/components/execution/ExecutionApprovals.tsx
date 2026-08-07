@@ -9,6 +9,7 @@ import { getExecutionApprovals } from './approvalUtils';
 import { ResourceJsonDiff } from './ExecPlanJsonDiff';
 
 const TASK_REFRESH_FREQUENCY = 5000;
+const APPROVAL_REVIEW_AGENT_ID = '019fde25-c4b0-747d-8e23-937e37c486da';
 
 interface IExecutionApprovalsProps {
     plan: Record<string, IExecutionPlan>;
@@ -51,7 +52,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
         });
         return byResourceId;
     }, [plan]);
-    const reviewPrompt = `/internal/summarize-slate-approvals ${window.location.href}`;
+    const reviewPrompt = `summarize : ${window.location.href}`;
     const blockedCount = approvals.filter(
         (approval) => approval.status === 'NOT_STARTED' && approval.blockedBy.length > 0
     ).length;
@@ -150,7 +151,8 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
             <Box display="flex" justifyContent="flex-end" marginBottom={1}>
                 <Button
                     className="helix-ultra-button"
-                    data-button-name="Review Slate Changes"
+                    data-agent-id={APPROVAL_REVIEW_AGENT_ID}
+                    data-button-name="Review with agent"
                     data-pre-prompt={reviewPrompt}
                     data-initial-placeholder-text="Ask about this Slate execution"
                     data-create-new-chat="true"
