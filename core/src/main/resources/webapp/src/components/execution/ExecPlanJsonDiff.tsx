@@ -9,6 +9,30 @@ interface IExecPlanJsonDiffProps {
     execPlan: Record<string, IExecutionPlan>;
 }
 
+interface IResourceJsonDiffProps {
+    plan: IExecutionPlan;
+    splitView?: boolean;
+}
+
+export const ResourceJsonDiff: React.FC<IResourceJsonDiffProps> = ({ plan, splitView = true }) => {
+    const [oldValue, newValue] = useMemo(() => {
+        const oldObject = plan.currentResource ? sortObjectByKeys(plan.currentResource, true) : null;
+        const newObject = sortObjectByKeys(plan.proposedResource, true);
+        return [oldObject ? JSON.stringify(oldObject, null, 2) : '', JSON.stringify(newObject, null, 2)];
+    }, [plan]);
+
+    return (
+        <ReactDiffViewer
+            oldValue={oldValue}
+            newValue={newValue}
+            splitView={splitView}
+            hideLineNumbers={true}
+            showDiffOnly={true}
+            compareMethod={DiffMethod.WORDS}
+        />
+    );
+};
+
 const ExecPlanJsonDiff: React.FC<IExecPlanJsonDiffProps> = ({ execPlan }) => {
     const newAndExistingResources: [IExecutionPlan[], IExecutionPlan[]] = useMemo(() => {
         const newList: IExecutionPlan[] = [];
@@ -44,14 +68,7 @@ const ExecPlanJsonDiff: React.FC<IExecPlanJsonDiffProps> = ({ execPlan }) => {
                     </Box>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <ReactDiffViewer
-                        oldValue={oldObject ? JSON.stringify(oldObject, null, 2) : ''}
-                        newValue={JSON.stringify(newObject, null, 2)}
-                        splitView={true}
-                        hideLineNumbers={true}
-                        showDiffOnly={true}
-                        compareMethod={DiffMethod.WORDS}
-                    />
+                    <ResourceJsonDiff plan={plan} />
                 </AccordionDetails>
             </Accordion>
         );
