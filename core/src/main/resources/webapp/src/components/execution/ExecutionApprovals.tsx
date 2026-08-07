@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, alpha, Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
+import { Alert, alpha, Box, Button, Chip, Collapse, Stack, Typography, useTheme } from '@mui/material';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { useSnackBar } from '../../context/SnackbarContext';
 import { ITask } from '../task/types';
 import { IExecutionPlan, TExecutionStatus } from './types';
 import { getExecutionApprovals } from './approvalUtils';
+import { ResourceJsonDiff } from './ExecPlanJsonDiff';
 
 const TASK_REFRESH_FREQUENCY = 5000;
 
@@ -39,6 +41,16 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
     const { showSnackbar } = useSnackBar();
     const theme = useTheme();
     const approvals = useMemo(() => getExecutionApprovals(plan), [plan]);
+    const resourcePlans = useMemo(() => {
+        const byResourceId = new Map<string, IExecutionPlan>();
+        Object.entries(plan).forEach(([planId, planEntry]) => {
+            byResourceId.set(planId, planEntry);
+            if (planEntry.proposedResource?.id) {
+                byResourceId.set(planEntry.proposedResource.id, planEntry);
+            }
+        });
+        return byResourceId;
+    }, [plan]);
     const reviewPrompt = `/internal/summarize-slate-approvals ${window.location.href}`;
     const blockedCount = approvals.filter(
         (approval) => approval.status === 'NOT_STARTED' && approval.blockedBy.length > 0
@@ -50,6 +62,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
     const [actionableTasks, setActionableTasks] = useState<Set<string>>(new Set());
     const [actionsUnavailable, setActionsUnavailable] = useState(false);
     const [updatingTask, setUpdatingTask] = useState<null | string>(null);
+    const [expandedChanges, setExpandedChanges] = useState<Set<string>>(new Set());
 
     const fetchActionableTasks = useCallback(() => {
         fetch('/api/v2/tasks/mygrouptasks', {
@@ -120,6 +133,18 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
             });
     };
 
+    const toggleChanges = (key: string) => {
+        setExpandedChanges((current) => {
+            const next = new Set(current);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+            return next;
+        });
+    };
+
     return (
         <Box height="100%" overflow="auto" paddingTop={1}>
             <Box display="flex" justifyContent="flex-end" marginBottom={1}>
@@ -159,6 +184,8 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                             const isUpdating = updatingTask === key;
                             const isBlocked = approval.status === 'NOT_STARTED' && approval.blockedBy.length > 0;
                             const status = statusDisplay(approval.status, isBlocked);
+                            const resourcePlan = resourcePlans.get(approval.resourceId);
+                            const changesExpanded = expandedChanges.has(key);
 
                             return (
                                 <Box key={key} border={1} borderColor="divider" borderRadius={1} padding={1.5}>
@@ -196,6 +223,53 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                     {approval.description && (
                                         <Box mt={1}>
                                             <ReactMarkdown>{approval.description}</ReactMarkdown>
+                                        </Box>
+                                    )}
+                                    {resourcePlan && (
+                                        <Box mt={0.5}>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                endIcon={
+                                                    changesExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />
+                                                }
+                                                aria-expanded={changesExpanded}
+                                                onClick={() => toggleChanges(key)}
+                                                sx={{ paddingLeft: 0, textTransform: 'none' }}
+                                            >
+                                                {changesExpanded ? 'Hide changes' : 'View changes'}
+                                            </Button>
+                                            <Collapse in={changesExpanded} timeout="auto" unmountOnExit>
+                                                <Box
+                                                    border={1}
+                                                    borderColor="divider"
+                                                    borderRadius={1}
+                                                    overflow="hidden"
+                                                    marginBottom={1}
+                                                >
+                                                    <Box padding={1} bgcolor="action.hover">
+                                                        <Typography variant="body2">
+                                                            <b>
+                                                                {resourcePlan.currentResource
+                                                                    ? 'Proposed resource changes'
+                                                                    : 'New resource'}
+                                                            </b>
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box
+                                                        overflow="auto"
+                                                        sx={{
+                                                            '& table': { width: '100%' },
+                                                            '& pre': {
+                                                                whiteSpace: 'pre-wrap !important',
+                                                                overflowWrap: 'anywhere',
+                                                            },
+                                                        }}
+                                                    >
+                                                        <ResourceJsonDiff plan={resourcePlan} splitView={false} />
+                                                    </Box>
+                                                </Box>
+                                            </Collapse>
                                         </Box>
                                     )}
                                     {canAct && !isBlocked && (
