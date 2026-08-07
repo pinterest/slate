@@ -5,6 +5,7 @@ type OnboardingButtonConfig = Record<string, string>;
 
 const SAFE_ATTRIBUTE_PATTERN = /^(data|aria)-[a-z0-9_.:-]+$/;
 const SAFE_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const DEFAULT_PRE_PROMPT = 'Help me onboard a data pipeline';
 
 const OnboardingButton: React.FC = () => {
     const [config, setConfig] = useState<OnboardingButtonConfig>({});
@@ -49,14 +50,18 @@ const OnboardingButton: React.FC = () => {
         .split(/\s+/)
         .filter((name) => SAFE_CLASS_NAME_PATTERN.test(name))
         .join(' ');
+    const buttonAttributes: Record<string, string> = {
+        ...safeAttributes,
+        'data-pre-prompt': safeAttributes['data-pre-prompt'] ?? DEFAULT_PRE_PROMPT,
+    };
 
     return (
         <Fab
             variant="extended"
             color="primary"
             className={safeClassName}
-            {...safeAttributes}
-            aria-label={safeAttributes['aria-label'] ?? label}
+            {...buttonAttributes}
+            aria-label={buttonAttributes['aria-label'] ?? label}
             title={title}
             style={{
                 position: 'fixed',
