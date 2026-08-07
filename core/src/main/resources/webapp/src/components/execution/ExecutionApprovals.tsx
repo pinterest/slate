@@ -160,7 +160,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                     title="Open Helix Ultra to review this execution"
                     sx={{ textTransform: 'none' }}
                 >
-                    Review changes
+                    Review with agent
                 </Button>
             </Box>
             {actionsUnavailable && (
