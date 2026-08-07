@@ -78,12 +78,23 @@ public class SlateConfig extends Configuration {
 
   private Map<String, String> onboardingButton = Collections.emptyMap();
 
+  private Map<String, String> approvalReviewButton = Collections.emptyMap();
+
   public Map<String, String> getOnboardingButton() {
     return onboardingButton;
   }
 
   public void setOnboardingButton(Map<String, String> onboardingButton) {
     this.onboardingButton = onboardingButton == null ? Collections.emptyMap() : onboardingButton;
+  }
+
+  public Map<String, String> getApprovalReviewButton() {
+    return approvalReviewButton;
+  }
+
+  public void setApprovalReviewButton(Map<String, String> approvalReviewButton) {
+    this.approvalReviewButton =
+        approvalReviewButton == null ? Collections.emptyMap() : approvalReviewButton;
   }
 
   public String getBaseMetricsUrl() {

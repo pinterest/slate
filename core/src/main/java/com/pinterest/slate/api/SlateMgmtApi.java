@@ -60,6 +60,12 @@ public class SlateMgmtApi {
     return config.getOnboardingButton();
   }
 
+  @Path("/approval-review-button")
+  @GET
+  public Map<String, String> getApprovalReviewButton() {
+    return config.getApprovalReviewButton();
+  }
+
   @Path("/isadmin")
   @GET
   public boolean isUserAdmin(@Context SecurityContext sc,
