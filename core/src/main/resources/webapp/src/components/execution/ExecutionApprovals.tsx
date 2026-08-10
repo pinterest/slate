@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     alpha,
@@ -18,58 +18,20 @@ import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { useSnackBar } from '../../context/SnackbarContext';
 import { ITask } from '../task/types';
-import { IExecutionPlan, TExecutionStatus } from './types';
-import { getExecutionApprovals } from './approvalUtils';
+import { IExecutionPlan, IExecutionTaskJson, TExecutionStatus } from './types';
+import { formatApprovalDate, formatApprovalWait, getExecutionApprovals } from './approvalUtils';
 import { ResourceJsonDiff } from './ExecPlanJsonDiff';
 import ApprovalReviewButton from './ApprovalReviewButton';
+import JsonPrettier from '../common/JsonPrettier';
 
 const TASK_REFRESH_FREQUENCY = 5000;
-const DESCRIPTION_PREVIEW_LENGTH = 240;
 
 interface IExecutionApprovalsProps {
     plan: Record<string, IExecutionPlan>;
+    focusedApprovalKey?: string | null;
 }
 
 const taskKey = (processId: string, taskId: string): string => `${processId}:${taskId}`;
-
-interface IDescriptionPreview {
-    text: string;
-    hasHiddenContext: boolean;
-}
-
-const truncateDescription = (description: string): string => {
-    const preview = description.slice(0, DESCRIPTION_PREVIEW_LENGTH);
-    const lastWhitespace = preview.lastIndexOf(' ');
-    const cutoff = lastWhitespace > DESCRIPTION_PREVIEW_LENGTH / 2 ? lastWhitespace : preview.length;
-    return `${preview.slice(0, cutoff).replace(/\s+$/, '')}…`;
-};
-
-const getDescriptionPreview = (description: string): IDescriptionPreview => {
-    const trimmed = description.trim();
-    const isStructuredOnly = /^(?:json\s*:|\{|\[)/i.test(trimmed);
-    if (isStructuredOnly) {
-        return { text: '', hasHiddenContext: true };
-    }
-
-    const structuredContextIndexes = [
-        description.search(/(?:^|\n)\s*(?:task\s+)?json\s*:/i),
-        description.search(/(?:^|\n)\s*```(?:json)?/i),
-    ].filter((index) => index >= 0);
-    const structuredContextStart = structuredContextIndexes.length ? Math.min(...structuredContextIndexes) : -1;
-    const prose = structuredContextStart >= 0 ? description.slice(0, structuredContextStart) : description;
-    const plainText = prose
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/[*_`#>]/g, '')
-        .replace(/\s+-\s+/g, ' · ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const isTruncated = plainText.length > DESCRIPTION_PREVIEW_LENGTH;
-
-    return {
-        text: isTruncated ? truncateDescription(plainText) : plainText,
-        hasHiddenContext: structuredContextStart >= 0 || isTruncated,
-    };
-};
 
 const statusDisplay = (
     status: TExecutionStatus,
@@ -92,10 +54,27 @@ const statusDisplay = (
     }
 };
 
-const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
+type TApprovalDialog =
+    | { kind: 'description'; summary: string; description: string }
+    | { kind: 'json'; summary: string; json: IExecutionTaskJson };
+
+const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedApprovalKey }) => {
     const { showSnackbar } = useSnackBar();
     const theme = useTheme();
     const approvals = useMemo(() => getExecutionApprovals(plan), [plan]);
+    const taskJsonByKey = useMemo(() => {
+        const byKey = new Map<string, IExecutionTaskJson>();
+        Object.values(plan).forEach((planEntry) => {
+            const process = planEntry.process;
+            if (!process) {
+                return;
+            }
+            Object.entries(process.allTasks).forEach(([taskId, task]) => {
+                byKey.set(taskKey(process.processId, taskId), task);
+            });
+        });
+        return byKey;
+    }, [plan]);
     const resourcePlans = useMemo(() => {
         const byResourceId = new Map<string, IExecutionPlan>();
         Object.entries(plan).forEach(([planId, planEntry]) => {
@@ -117,7 +96,14 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
     const [actionsUnavailable, setActionsUnavailable] = useState(false);
     const [updatingTask, setUpdatingTask] = useState<null | string>(null);
     const [expandedChanges, setExpandedChanges] = useState<Set<string>>(new Set());
-    const [selectedContext, setSelectedContext] = useState<null | { description: string; summary: string }>(null);
+    const [selectedContext, setSelectedContext] = useState<null | TApprovalDialog>(null);
+    const focusedCardRef = useRef<null | HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (focusedApprovalKey && focusedCardRef.current) {
+            focusedCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [focusedApprovalKey]);
 
     const fetchActionableTasks = useCallback(() => {
         fetch('/api/v2/tasks/mygrouptasks', {
@@ -226,13 +212,20 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                             const status = statusDisplay(approval.status, isBlocked);
                             const resourcePlan = resourcePlans.get(approval.resourceId);
                             const changesExpanded = expandedChanges.has(key);
-                            const description = getDescriptionPreview(approval.description);
+                            const isAwaiting = approval.status === 'RUNNING' && !isBlocked;
+                            const waitingLabel = isAwaiting ? formatApprovalWait(approval.startTimeMs, Date.now()) : '';
+                            const approvedDate =
+                                approval.status === 'SUCCEEDED' ? formatApprovalDate(approval.endTimeMs) : '';
+                            const isFocused = focusedApprovalKey === key;
+                            const taskJson = taskJsonByKey.get(key);
 
                             return (
                                 <Box
                                     key={key}
+                                    ref={isFocused ? focusedCardRef : undefined}
                                     border={1}
-                                    borderColor="divider"
+                                    borderColor={isFocused ? 'primary.main' : 'divider'}
+                                    bgcolor={isFocused ? alpha(theme.palette.primary.main, 0.06) : undefined}
                                     borderRadius={1}
                                     padding={1.5}
                                     minWidth={0}
@@ -244,16 +237,34 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                                 <b>{approval.summary}</b>
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                Stage {approval.dependencyLevel + 1} · Approval group:{' '}
-                                                {approval.group || 'Unknown'}
+                                                Stage {approval.dependencyLevel + 1}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                Approval group: <b>{approval.group || 'Unknown'}</b>
                                             </Typography>
                                         </Box>
-                                        <Chip
-                                            size="small"
-                                            label={status.label}
-                                            color={status.color}
-                                            sx={{ flexShrink: 0 }}
-                                        />
+                                        <Stack alignItems="flex-end" spacing={0.5} sx={{ flexShrink: 0 }}>
+                                            <Chip size="small" label={status.label} color={status.color} />
+                                            {waitingLabel ? (
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    textAlign="right"
+                                                >
+                                                    {waitingLabel}
+                                                </Typography>
+                                            ) : (
+                                                approvedDate && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        textAlign="right"
+                                                    >
+                                                        Approved {approvedDate}
+                                                    </Typography>
+                                                )
+                                            )}
+                                        </Stack>
                                     </Stack>
                                     {isBlocked && (
                                         <Box
@@ -274,30 +285,15 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                             )}
                                         </Box>
                                     )}
-                                    {description.text && (
-                                        <Typography
-                                            variant="body2"
-                                            mt={1}
-                                            sx={{
-                                                display: '-webkit-box',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 2,
-                                                overflow: 'hidden',
-                                                overflowWrap: 'anywhere',
-                                                wordBreak: 'break-word',
-                                            }}
-                                        >
-                                            {description.text}
-                                        </Typography>
-                                    )}
-                                    {(description.hasHiddenContext || resourcePlan) && (
+                                    {(approval.description || taskJson || resourcePlan) && (
                                         <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} mt={0.5}>
-                                            {description.hasHiddenContext && (
+                                            {approval.description && (
                                                 <Button
                                                     size="small"
                                                     variant="text"
                                                     onClick={() =>
                                                         setSelectedContext({
+                                                            kind: 'description',
                                                             description: approval.description,
                                                             summary: approval.summary,
                                                         })
@@ -305,6 +301,22 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                                     sx={{ paddingLeft: 0, textTransform: 'none' }}
                                                 >
                                                     View full description
+                                                </Button>
+                                            )}
+                                            {taskJson && (
+                                                <Button
+                                                    size="small"
+                                                    variant="text"
+                                                    onClick={() =>
+                                                        setSelectedContext({
+                                                            kind: 'json',
+                                                            json: taskJson,
+                                                            summary: approval.summary,
+                                                        })
+                                                    }
+                                                    sx={{ paddingLeft: 0, textTransform: 'none' }}
+                                                >
+                                                    View complete JSON
                                                 </Button>
                                             )}
                                             {resourcePlan && (
@@ -395,7 +407,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                 maxWidth="md"
             >
                 <DialogTitle>
-                    Approval description
+                    {selectedContext?.kind === 'json' ? 'Approval task JSON' : 'Approval description'}
                     {selectedContext && (
                         <Typography variant="body2" color="text.secondary">
                             {selectedContext.summary}
@@ -417,7 +429,13 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                         },
                     }}
                 >
-                    {selectedContext && <ReactMarkdown>{selectedContext.description}</ReactMarkdown>}
+                    {selectedContext?.kind === 'json' ? (
+                        <Box height="60vh" minWidth={0}>
+                            <JsonPrettier data={selectedContext.json} />
+                        </Box>
+                    ) : (
+                        selectedContext && <ReactMarkdown>{selectedContext.description}</ReactMarkdown>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setSelectedContext(null)}>Close</Button>

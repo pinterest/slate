@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Tab } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@material-ui/lab';
 import { IExecutionPlan, TTaskNode } from './types';
 import JsonPrettier from '../common/JsonPrettier';
 import ExecutionApprovals from './ExecutionApprovals';
+import { GROUP_APPROVAL_TASK_DEFINITION_ID } from './approvalUtils';
 
 interface INodeExecutionStatusProps {
     node: TTaskNode | null;
@@ -13,11 +14,24 @@ interface INodeExecutionStatusProps {
 const NodeExecutionStatus: React.FC<INodeExecutionStatusProps> = ({ node, plan }) => {
     const [selectedTab, setSelectedTab] = useState('approvals');
 
+    const focusedApprovalKey = useMemo(() => {
+        const taskId = node?.data?.taskJson?.label;
+        if (!node || !taskId || node.data?.taskJson?.task?.taskDefinitionId !== GROUP_APPROVAL_TASK_DEFINITION_ID) {
+            return null;
+        }
+        const match = Object.entries(plan ?? {}).find(
+            ([planId, planEntry]) =>
+                Boolean(planEntry.process?.allTasks?.[taskId]) && node.id === `${planId}-${taskId}`
+        );
+        const process = match?.[1].process;
+        return process ? `${process.processId}:${taskId}` : null;
+    }, [node?.id, plan]);
+
     useEffect(() => {
         if (node) {
-            setSelectedTab('task_status');
+            setSelectedTab(focusedApprovalKey ? 'approvals' : 'task_status');
         }
-    }, [node?.id]);
+    }, [node?.id, focusedApprovalKey]);
 
     const data = node?.data;
     return (
@@ -46,7 +60,7 @@ const NodeExecutionStatus: React.FC<INodeExecutionStatusProps> = ({ node, plan }
                         <Tab label="Process Context" value="process_context" disabled={!data} />
                     </TabList>
                     <TabPanel value="approvals" style={{ padding: '0px', height: 'calc(100% - 48px)' }}>
-                        <ExecutionApprovals plan={plan} />
+                        <ExecutionApprovals plan={plan} focusedApprovalKey={focusedApprovalKey} />
                     </TabPanel>
                     <TabPanel value="task_status" style={{ padding: '0px', height: '100%' }}>
                         {data && (

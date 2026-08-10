@@ -19,7 +19,36 @@ export interface IExecutionApproval {
     status: TExecutionStatus;
     dependencyLevel: number;
     blockedBy: IExecutionApprovalDependency[];
+    startTimeMs: number;
+    endTimeMs: number;
 }
+
+export const formatApprovalWait = (startTimeMs: number, nowMs: number): string => {
+    if (!startTimeMs || nowMs < startTimeMs) {
+        return '';
+    }
+    const minutes = Math.floor((nowMs - startTimeMs) / 60000);
+    if (minutes < 1) {
+        return 'Waiting for less than a minute';
+    }
+    if (minutes < 60) {
+        return `Waiting for ${minutes} minute${minutes === 1 ? '' : 's'}`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        return `Waiting for ${hours} hour${hours === 1 ? '' : 's'}`;
+    }
+    const days = Math.floor(hours / 24);
+    return `Waiting for ${days} day${days === 1 ? '' : 's'}`;
+};
+
+export const formatApprovalDate = (endTimeMs: number): string => {
+    if (!endTimeMs) {
+        return '';
+    }
+    const date = new Date(endTimeMs);
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+};
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
@@ -156,6 +185,8 @@ export const getExecutionApprovals = (plan: Record<string, IExecutionPlan>): IEx
                 status: task.status,
                 dependencyLevel: dependencyLevel(resourceId),
                 blockedBy,
+                startTimeMs: task.startTimeMs || 0,
+                endTimeMs: task.endTimeMs || 0,
             });
         });
     });
