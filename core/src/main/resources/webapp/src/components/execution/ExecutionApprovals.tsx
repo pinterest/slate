@@ -1,5 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, alpha, Box, Button, Chip, Collapse, Stack, Typography, useTheme } from '@mui/material';
+import {
+    Alert,
+    alpha,
+    Box,
+    Button,
+    Chip,
+    Collapse,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    Typography,
+    useTheme,
+} from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { useSnackBar } from '../../context/SnackbarContext';
@@ -10,12 +24,52 @@ import { ResourceJsonDiff } from './ExecPlanJsonDiff';
 import ApprovalReviewButton from './ApprovalReviewButton';
 
 const TASK_REFRESH_FREQUENCY = 5000;
+const DESCRIPTION_PREVIEW_LENGTH = 240;
 
 interface IExecutionApprovalsProps {
     plan: Record<string, IExecutionPlan>;
 }
 
 const taskKey = (processId: string, taskId: string): string => `${processId}:${taskId}`;
+
+interface IDescriptionPreview {
+    text: string;
+    hasHiddenContext: boolean;
+}
+
+const truncateDescription = (description: string): string => {
+    const preview = description.slice(0, DESCRIPTION_PREVIEW_LENGTH);
+    const lastWhitespace = preview.lastIndexOf(' ');
+    const cutoff = lastWhitespace > DESCRIPTION_PREVIEW_LENGTH / 2 ? lastWhitespace : preview.length;
+    return `${preview.slice(0, cutoff).replace(/\s+$/, '')}…`;
+};
+
+const getDescriptionPreview = (description: string): IDescriptionPreview => {
+    const trimmed = description.trim();
+    const isStructuredOnly = /^(?:json\s*:|\{|\[)/i.test(trimmed);
+    if (isStructuredOnly) {
+        return { text: '', hasHiddenContext: true };
+    }
+
+    const structuredContextIndexes = [
+        description.search(/(?:^|\n)\s*(?:task\s+)?json\s*:/i),
+        description.search(/(?:^|\n)\s*```(?:json)?/i),
+    ].filter((index) => index >= 0);
+    const structuredContextStart = structuredContextIndexes.length ? Math.min(...structuredContextIndexes) : -1;
+    const prose = structuredContextStart >= 0 ? description.slice(0, structuredContextStart) : description;
+    const plainText = prose
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/[*_`#>]/g, '')
+        .replace(/\s+-\s+/g, ' · ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const isTruncated = plainText.length > DESCRIPTION_PREVIEW_LENGTH;
+
+    return {
+        text: isTruncated ? truncateDescription(plainText) : plainText,
+        hasHiddenContext: structuredContextStart >= 0 || isTruncated,
+    };
+};
 
 const statusDisplay = (
     status: TExecutionStatus,
@@ -63,6 +117,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
     const [actionsUnavailable, setActionsUnavailable] = useState(false);
     const [updatingTask, setUpdatingTask] = useState<null | string>(null);
     const [expandedChanges, setExpandedChanges] = useState<Set<string>>(new Set());
+    const [selectedContext, setSelectedContext] = useState<null | { description: string; summary: string }>(null);
 
     const fetchActionableTasks = useCallback(() => {
         fetch('/api/v2/tasks/mygrouptasks', {
@@ -171,9 +226,18 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                             const status = statusDisplay(approval.status, isBlocked);
                             const resourcePlan = resourcePlans.get(approval.resourceId);
                             const changesExpanded = expandedChanges.has(key);
+                            const description = getDescriptionPreview(approval.description);
 
                             return (
-                                <Box key={key} border={1} borderColor="divider" borderRadius={1} padding={1.5}>
+                                <Box
+                                    key={key}
+                                    border={1}
+                                    borderColor="divider"
+                                    borderRadius={1}
+                                    padding={1.5}
+                                    minWidth={0}
+                                    overflow="hidden"
+                                >
                                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                                         <Box minWidth={0}>
                                             <Typography variant="subtitle1" sx={{ overflowWrap: 'anywhere' }}>
@@ -184,7 +248,12 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                                 {approval.group || 'Unknown'}
                                             </Typography>
                                         </Box>
-                                        <Chip size="small" label={status.label} color={status.color} />
+                                        <Chip
+                                            size="small"
+                                            label={status.label}
+                                            color={status.color}
+                                            sx={{ flexShrink: 0 }}
+                                        />
                                     </Stack>
                                     {isBlocked && (
                                         <Box
@@ -205,57 +274,87 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                                             )}
                                         </Box>
                                     )}
-                                    {approval.description && (
-                                        <Box mt={1}>
-                                            <ReactMarkdown>{approval.description}</ReactMarkdown>
+                                    {description.text && (
+                                        <Typography
+                                            variant="body2"
+                                            mt={1}
+                                            sx={{
+                                                display: '-webkit-box',
+                                                WebkitBoxOrient: 'vertical',
+                                                WebkitLineClamp: 2,
+                                                overflow: 'hidden',
+                                                overflowWrap: 'anywhere',
+                                                wordBreak: 'break-word',
+                                            }}
+                                        >
+                                            {description.text}
+                                        </Typography>
+                                    )}
+                                    {(description.hasHiddenContext || resourcePlan) && (
+                                        <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} mt={0.5}>
+                                            {description.hasHiddenContext && (
+                                                <Button
+                                                    size="small"
+                                                    variant="text"
+                                                    onClick={() =>
+                                                        setSelectedContext({
+                                                            description: approval.description,
+                                                            summary: approval.summary,
+                                                        })
+                                                    }
+                                                    sx={{ paddingLeft: 0, textTransform: 'none' }}
+                                                >
+                                                    View full description
+                                                </Button>
+                                            )}
+                                            {resourcePlan && (
+                                                <Button
+                                                    size="small"
+                                                    variant="text"
+                                                    endIcon={
+                                                        changesExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />
+                                                    }
+                                                    aria-expanded={changesExpanded}
+                                                    onClick={() => toggleChanges(key)}
+                                                    sx={{ paddingLeft: 0, textTransform: 'none' }}
+                                                >
+                                                    {changesExpanded ? 'Hide resource changes' : 'View resource changes'}
+                                                </Button>
+                                            )}
                                         </Box>
                                     )}
                                     {resourcePlan && (
-                                        <Box mt={0.5}>
-                                            <Button
-                                                size="small"
-                                                variant="text"
-                                                endIcon={
-                                                    changesExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />
-                                                }
-                                                aria-expanded={changesExpanded}
-                                                onClick={() => toggleChanges(key)}
-                                                sx={{ paddingLeft: 0, textTransform: 'none' }}
+                                        <Collapse in={changesExpanded} timeout="auto" unmountOnExit>
+                                            <Box
+                                                border={1}
+                                                borderColor="divider"
+                                                borderRadius={1}
+                                                overflow="hidden"
+                                                marginBottom={1}
                                             >
-                                                {changesExpanded ? 'Hide changes' : 'View changes'}
-                                            </Button>
-                                            <Collapse in={changesExpanded} timeout="auto" unmountOnExit>
-                                                <Box
-                                                    border={1}
-                                                    borderColor="divider"
-                                                    borderRadius={1}
-                                                    overflow="hidden"
-                                                    marginBottom={1}
-                                                >
-                                                    <Box padding={1} bgcolor="action.hover">
-                                                        <Typography variant="body2">
-                                                            <b>
-                                                                {resourcePlan.currentResource
-                                                                    ? 'Proposed resource changes'
-                                                                    : 'New resource'}
-                                                            </b>
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box
-                                                        overflow="auto"
-                                                        sx={{
-                                                            '& table': { width: '100%' },
-                                                            '& pre': {
-                                                                whiteSpace: 'pre-wrap !important',
-                                                                overflowWrap: 'anywhere',
-                                                            },
-                                                        }}
-                                                    >
-                                                        <ResourceJsonDiff plan={resourcePlan} splitView={false} />
-                                                    </Box>
+                                                <Box padding={1} bgcolor="action.hover">
+                                                    <Typography variant="body2">
+                                                        <b>
+                                                            {resourcePlan.currentResource
+                                                                ? 'Proposed resource changes'
+                                                                : 'New resource'}
+                                                        </b>
+                                                    </Typography>
                                                 </Box>
-                                            </Collapse>
-                                        </Box>
+                                                <Box
+                                                    overflow="auto"
+                                                    sx={{
+                                                        '& table': { width: '100%' },
+                                                        '& pre': {
+                                                            whiteSpace: 'pre-wrap !important',
+                                                            overflowWrap: 'anywhere',
+                                                        },
+                                                    }}
+                                                >
+                                                    <ResourceJsonDiff plan={resourcePlan} splitView={false} />
+                                                </Box>
+                                            </Box>
+                                        </Collapse>
                                     )}
                                     {canAct && !isBlocked && (
                                         <Stack direction="row" spacing={1} mt={1}>
@@ -289,6 +388,41 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan }) => {
                     </Stack>
                 </>
             )}
+            <Dialog
+                open={selectedContext !== null}
+                onClose={() => setSelectedContext(null)}
+                fullWidth
+                maxWidth="md"
+            >
+                <DialogTitle>
+                    Approval description
+                    {selectedContext && (
+                        <Typography variant="body2" color="text.secondary">
+                            {selectedContext.summary}
+                        </Typography>
+                    )}
+                </DialogTitle>
+                <DialogContent
+                    dividers
+                    sx={{
+                        '& p, & li, & a': {
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                        },
+                        '& pre': {
+                            maxWidth: '100%',
+                            overflowX: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            overflowWrap: 'anywhere',
+                        },
+                    }}
+                >
+                    {selectedContext && <ReactMarkdown>{selectedContext.description}</ReactMarkdown>}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setSelectedContext(null)}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
