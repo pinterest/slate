@@ -21,8 +21,6 @@ import { ITask } from '../task/types';
 import { IExecutionPlan, IExecutionTaskJson, TExecutionStatus } from './types';
 import {
     formatApprovalDate,
-    formatApprovalSummary,
-    formatApprovalSummaryParts,
     formatApprovalWait,
     getExecutionApprovals,
 } from './approvalUtils';
@@ -70,7 +68,6 @@ type TApprovalDialog =
     | {
           kind: 'advanced';
           summary: string;
-          rawSummary: string;
           json: IExecutionTaskJson;
           context: null | Record<string, unknown>;
       };
@@ -256,8 +253,6 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                             const isFocused = focusedApprovalKey === key;
                             const taskDetails = taskJsonByKey.get(key);
                             const taskJson = taskDetails?.task;
-                            const displaySummary = formatApprovalSummary(approval.summary);
-                            const summaryParts = formatApprovalSummaryParts(approval.summary);
 
                             return (
                                 <Box
@@ -278,19 +273,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                 title={approval.summary}
                                                 sx={{ overflowWrap: 'anywhere' }}
                                             >
-                                                {summaryParts.prefix}
-                                                {summaryParts.name && (
-                                                    <>
-                                                        {' '}
-                                                        <b>{summaryParts.name}</b>
-                                                    </>
-                                                )}
-                                                {summaryParts.cluster && (
-                                                    <>
-                                                        {' '}
-                                                        in <b>{summaryParts.cluster}</b>
-                                                    </>
-                                                )}
+                                                {approval.summary}
                                             </Typography>
                                             <Typography variant="body2">
                                                 Approval group: <b>{approval.group || 'Unknown'}</b>
@@ -332,7 +315,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                 title={approval.blockedBy[0].label}
                                                 sx={{ overflowWrap: 'anywhere' }}
                                             >
-                                                <b>Waiting for:</b> {formatApprovalSummary(approval.blockedBy[0].label)}
+                                                <b>Waiting for:</b> {approval.blockedBy[0].label}
                                             </Typography>
                                             {approval.blockedBy.length > 1 && (
                                                 <Typography variant="caption" color="text.secondary">
@@ -352,7 +335,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                         setSelectedContext({
                                                             kind: 'description',
                                                             description: approval.description,
-                                                            summary: displaySummary,
+                                                            summary: approval.summary,
                                                         })
                                                     }
                                                     sx={{ paddingLeft: 0, textTransform: 'none' }}
@@ -369,8 +352,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                             kind: 'advanced',
                                                             json: taskJson,
                                                             context: taskDetails?.context ?? null,
-                                                            summary: displaySummary,
-                                                            rawSummary: approval.summary,
+                                                            summary: approval.summary,
                                                         })
                                                     }
                                                     sx={{ paddingLeft: 0, textTransform: 'none' }}
@@ -490,20 +472,6 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                 >
                     {selectedContext?.kind === 'advanced' ? (
                         <Box maxHeight="65vh" minWidth={0} overflow="auto">
-                            {selectedContext.rawSummary && (
-                                <>
-                                    <Typography variant="body2" marginBottom={0.5}>
-                                        <b>Summary</b>
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        marginBottom={1.5}
-                                        sx={{ overflowWrap: 'anywhere' }}
-                                    >
-                                        {selectedContext.rawSummary}
-                                    </Typography>
-                                </>
-                            )}
                             {selectedContext.json.stdOut?.length > 0 && (
                                 <>
                                     <Typography variant="body2" marginBottom={0.5}>
