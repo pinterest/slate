@@ -30,13 +30,13 @@ const escapeHtml = (value: string): string =>
 // which react-json-pretty's line-based tokenizer cannot). Based on the classic
 // MDN JSON.stringify + span-wrapping approach.
 const highlightJson = (data: unknown): string => {
-    let json: string;
+    let json: string | undefined;
     try {
         json = JSON.stringify(data, null, 2);
     } catch {
-        return escapeHtml(String(data));
+        json = undefined;
     }
-    if (json === undefined) {
+    if (typeof json !== 'string') {
         return escapeHtml(String(data));
     }
     return escapeHtml(json).replace(
