@@ -6,6 +6,7 @@ import NodeExecutionStatus from './NodeExecutionStatus';
 import TaskNode from './TaskNode';
 import { useStyles } from '../../AppStyles';
 import { buildGraphElementsFromPlan, organizeGraphElements } from '../../const/graphHelper';
+import { GROUP_APPROVAL_TASK_DEFINITION_ID } from './approvalUtils';
 
 interface IPlanGraphProps {
     plan: Record<string, IExecutionPlan>;
@@ -65,6 +66,14 @@ const PlanGraph: React.FC<IPlanGraphProps> = ({ plan, width, height, dagWidth, s
                             maxZoom={4}
                             onNodeClick={(e, node) => {
                                 if (showExecStatus) {
+                                    setSelectedNodeId(node.id);
+                                }
+                            }}
+                            onNodeMouseEnter={(e, node) => {
+                                if (
+                                    showExecStatus &&
+                                    node.data?.taskJson?.task?.taskDefinitionId === GROUP_APPROVAL_TASK_DEFINITION_ID
+                                ) {
                                     setSelectedNodeId(node.id);
                                 }
                             }}
