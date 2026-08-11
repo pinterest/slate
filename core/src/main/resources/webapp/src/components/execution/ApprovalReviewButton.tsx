@@ -7,7 +7,11 @@ const SAFE_ATTRIBUTE_PATTERN = /^(data|aria)-[a-z0-9_.:-]+$/;
 const SAFE_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const URL_PLACEHOLDER = '{url}';
 
-const ApprovalReviewButton: React.FC = () => {
+interface IApprovalReviewButtonProps {
+    executionUrl?: string;
+}
+
+const ApprovalReviewButton: React.FC<IApprovalReviewButtonProps> = ({ executionUrl }) => {
     const [config, setConfig] = useState<ApprovalReviewButtonConfig>({});
 
     useEffect(() => {
@@ -35,15 +39,15 @@ const ApprovalReviewButton: React.FC = () => {
         };
     }, []);
 
-    const { label, title, className = '', ...attributes } = config;
+    const { label, icon, title, className = '', ...attributes } = config;
     if (!label) {
         return null;
     }
 
+    const url = executionUrl || window.location.href;
     const safeAttributes = Object.entries(attributes).reduce<Record<string, string>>((result, [name, value]) => {
         if (SAFE_ATTRIBUTE_PATTERN.test(name) && typeof value === 'string') {
-            result[name] =
-                name === 'data-pre-prompt' ? value.split(URL_PLACEHOLDER).join(window.location.href) : value;
+            result[name] = name === 'data-pre-prompt' ? value.split(URL_PLACEHOLDER).join(url) : value;
         }
         return result;
     }, {});
@@ -59,11 +63,16 @@ const ApprovalReviewButton: React.FC = () => {
                 {...safeAttributes}
                 aria-label={safeAttributes['aria-label'] ?? label}
                 title={title}
-                variant="outlined"
+                variant="contained"
                 color="primary"
                 size="small"
                 sx={{ textTransform: 'none' }}
             >
+                {icon && (
+                    <span aria-hidden="true" style={{ marginRight: 8 }}>
+                        {icon}
+                    </span>
+                )}
                 {label}
             </Button>
         </Box>
