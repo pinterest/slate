@@ -496,8 +496,8 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                     <Typography variant="body2" marginBottom={0.5}>
                                         <b>Standard output</b>
                                     </Typography>
-                                    <Box maxHeight="30vh" marginBottom={1.5} minWidth={0} overflow="auto">
-                                        <JsonPrettier data={selectedContext.json.stdOut} />
+                                    <Box marginBottom={1.5} minWidth={0}>
+                                        <JsonPrettier data={selectedContext.json.stdOut} variant="light" />
                                     </Box>
                                 </>
                             )}
@@ -506,8 +506,8 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                     <Typography variant="body2" marginBottom={0.5}>
                                         <b>Standard error</b>
                                     </Typography>
-                                    <Box maxHeight="30vh" marginBottom={1.5} minWidth={0} overflow="auto">
-                                        <JsonPrettier data={selectedContext.json.stdErr} />
+                                    <Box marginBottom={1.5} minWidth={0}>
+                                        <JsonPrettier data={selectedContext.json.stdErr} variant="light" />
                                     </Box>
                                 </>
                             )}
@@ -516,16 +516,16 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                     <Typography variant="body2" marginBottom={0.5}>
                                         <b>Process context</b>
                                     </Typography>
-                                    <Box maxHeight="30vh" marginBottom={1.5} minWidth={0} overflow="auto">
-                                        <JsonPrettier data={selectedContext.context} />
+                                    <Box marginBottom={1.5} minWidth={0}>
+                                        <JsonPrettier data={selectedContext.context} variant="light" />
                                     </Box>
                                 </>
                             )}
                             <Typography variant="body2" marginBottom={0.5}>
                                 <b>Complete task JSON</b>
                             </Typography>
-                            <Box maxHeight="30vh" minWidth={0} overflow="auto">
-                                <JsonPrettier data={selectedContext.json} />
+                            <Box minWidth={0}>
+                                <JsonPrettier data={selectedContext.json} variant="light" />
                             </Box>
                         </Box>
                     ) : (
