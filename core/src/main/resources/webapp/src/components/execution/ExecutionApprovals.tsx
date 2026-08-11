@@ -212,21 +212,34 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
 
     return (
         <Box height="100%" overflow="auto" paddingTop={1}>
-            <ApprovalReviewButton executionUrl={executionUrl} />
             {actionsUnavailable && (
                 <Alert severity="warning" sx={{ marginBottom: 1 }}>
                     Approval actions are temporarily unavailable.
                 </Alert>
             )}
             {!approvals.length ? (
-                <Typography mt={2} align="center" variant="subtitle1">
-                    No approvals are required for this execution
-                </Typography>
+                <>
+                    <Box display="flex" justifyContent="flex-end">
+                        <ApprovalReviewButton executionUrl={executionUrl} />
+                    </Box>
+                    <Typography mt={2} align="center" variant="subtitle1">
+                        No approvals are required for this execution
+                    </Typography>
+                </>
             ) : (
                 <>
-                    <Typography variant="body2" color="text.secondary" marginBottom={1}>
-                        {awaitingCount} awaiting · {blockedCount} blocked · {approvedCount} approved
-                    </Typography>
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        spacing={1}
+                        marginBottom={1}
+                    >
+                        <Typography variant="body2" color="text.secondary">
+                            {awaitingCount} awaiting · {blockedCount} blocked · {approvedCount} approved
+                        </Typography>
+                        <ApprovalReviewButton executionUrl={executionUrl} />
+                    </Stack>
                     <Stack spacing={1}>
                         {approvals.map((approval) => {
                             const key = taskKey(approval.processId, approval.taskId);

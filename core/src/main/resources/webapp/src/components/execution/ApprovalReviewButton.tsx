@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { Button } from '@mui/material';
 
 type ApprovalReviewButtonConfig = Record<string, string>;
 
@@ -57,25 +57,29 @@ const ApprovalReviewButton: React.FC<IApprovalReviewButtonProps> = ({ executionU
         .join(' ');
 
     return (
-        <Box display="flex" justifyContent="flex-end" marginBottom={1}>
-            <Button
-                className={safeClassName}
-                {...safeAttributes}
-                aria-label={safeAttributes['aria-label'] ?? label}
-                title={title}
-                variant="contained"
-                color="primary"
-                size="small"
-                sx={{ textTransform: 'none' }}
-            >
-                {icon && (
-                    <span aria-hidden="true" style={{ marginRight: 8 }}>
-                        {icon}
-                    </span>
-                )}
-                {label}
-            </Button>
-        </Box>
+        <Button
+            className={safeClassName}
+            {...safeAttributes}
+            aria-label={safeAttributes['aria-label'] ?? label}
+            title={title}
+            variant="contained"
+            size="small"
+            sx={{
+                textTransform: 'none',
+                flexShrink: 0,
+                backgroundColor: '#ed6c02',
+                '&:hover': {
+                    backgroundColor: '#c55a02',
+                },
+            }}
+        >
+            {icon && (
+                <span aria-hidden="true" style={{ marginRight: 8 }}>
+                    {icon}
+                </span>
+            )}
+            {label}
+        </Button>
     );
 };
 
