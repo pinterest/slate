@@ -63,15 +63,9 @@ const ApprovalReviewButton: React.FC<IApprovalReviewButtonProps> = ({ executionU
             aria-label={safeAttributes['aria-label'] ?? label}
             title={title}
             variant="contained"
+            color="secondary"
             size="small"
-            sx={{
-                textTransform: 'none',
-                flexShrink: 0,
-                backgroundColor: '#ed6c02',
-                '&:hover': {
-                    backgroundColor: '#c55a02',
-                },
-            }}
+            sx={{ textTransform: 'none', flexShrink: 0 }}
         >
             {icon && (
                 <span aria-hidden="true" style={{ marginRight: 8 }}>
