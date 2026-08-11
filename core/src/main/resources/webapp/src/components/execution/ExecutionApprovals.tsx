@@ -208,7 +208,13 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
     };
 
     return (
-        <Box height="100%" overflow="auto" paddingTop={1}>
+        <Box
+            height="100%"
+            overflow="auto"
+            paddingTop={1}
+            paddingRight={2}
+            sx={{ scrollbarGutter: 'stable' }}
+        >
             {actionsUnavailable && (
                 <Alert severity="warning" sx={{ marginBottom: 1 }}>
                     Approval actions are temporarily unavailable.
