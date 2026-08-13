@@ -59,6 +59,7 @@ const statusDisplay = (
 };
 
 interface IApprovalTaskDetails {
+    taskId: string;
     task: IExecutionTaskJson;
     context: null | Record<string, unknown>;
 }
@@ -70,6 +71,7 @@ type TApprovalDialog =
           summary: string;
           json: IExecutionTaskJson;
           context: null | Record<string, unknown>;
+          taskErrors: IApprovalTaskDetails[];
       };
 
 const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedApprovalKey }) => {
@@ -85,12 +87,33 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
             }
             Object.entries(process.allTasks).forEach(([taskId, task]) => {
                 byKey.set(taskKey(process.processId, taskId), {
+                    taskId,
                     task,
                     context: process.processContext?.[taskId] ?? null,
                 });
             });
         });
         return byKey;
+    }, [plan]);
+    const taskErrorsByProcessId = useMemo(() => {
+        const byProcessId = new Map<string, IApprovalTaskDetails[]>();
+        Object.values(plan).forEach((planEntry) => {
+            const process = planEntry.process;
+            if (!process) {
+                return;
+            }
+            byProcessId.set(
+                process.processId,
+                Object.entries(process.allTasks)
+                    .filter(([, task]) => task.stdErr?.length > 0)
+                    .map(([taskId, task]) => ({
+                        taskId,
+                        task,
+                        context: process.processContext?.[taskId] ?? null,
+                    }))
+            );
+        });
+        return byProcessId;
     }, [plan]);
     const executionUrl = useMemo(() => {
         const executionId = Object.values(plan).find((planEntry) => planEntry.process)?.process?.executionId;
@@ -358,6 +381,8 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                             kind: 'advanced',
                                                             json: taskJson,
                                                             context: taskDetails?.context ?? null,
+                                                            taskErrors:
+                                                                taskErrorsByProcessId.get(approval.processId) ?? [],
                                                             summary: approval.summary,
                                                         })
                                                     }
@@ -488,16 +513,16 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                     </Box>
                                 </>
                             )}
-                            {selectedContext.json.stdErr?.length > 0 && (
-                                <>
+                            {selectedContext.taskErrors.map(({ taskId, task }) => (
+                                <React.Fragment key={taskId}>
                                     <Typography variant="body2" marginBottom={0.5}>
-                                        <b>Standard error</b>
+                                        <b>Standard error — {taskId}</b> ({task.status})
                                     </Typography>
                                     <Box marginBottom={1.5} minWidth={0}>
-                                        <JsonPrettier data={selectedContext.json.stdErr} variant="light" />
+                                        <JsonPrettier data={task.stdErr} variant="light" />
                                     </Box>
-                                </>
-                            )}
+                                </React.Fragment>
+                            ))}
                             {selectedContext.context && (
                                 <>
                                     <Typography variant="body2" marginBottom={0.5}>
