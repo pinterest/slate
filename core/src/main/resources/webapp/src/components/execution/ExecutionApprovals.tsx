@@ -26,13 +26,14 @@ import {
 } from './approvalUtils';
 import { ResourceJsonDiff } from './ExecPlanJsonDiff';
 import ApprovalReviewButton from './ApprovalReviewButton';
-import JsonPrettier from '../common/JsonPrettier';
+import AdvancedTaskExplorer, { IApprovalTaskDetails } from './AdvancedTaskExplorer';
 
 const TASK_REFRESH_FREQUENCY = 5000;
 
 interface IExecutionApprovalsProps {
     plan: Record<string, IExecutionPlan>;
     focusedApprovalKey?: string | null;
+    focusedTaskKey?: string | null;
 }
 
 const taskKey = (processId: string, taskId: string): string => `${processId}:${taskId}`;
@@ -58,44 +59,56 @@ const statusDisplay = (
     }
 };
 
-interface IApprovalTaskDetails {
-    taskId: string;
-    task: IExecutionTaskJson;
-    context: null | Record<string, unknown>;
-}
-
 type TApprovalDialog =
     | { kind: 'description'; summary: string; description: string }
     | {
           kind: 'advanced';
           summary: string;
-          json: IExecutionTaskJson;
-          context: null | Record<string, unknown>;
-          taskErrors: IApprovalTaskDetails[];
+          tasks: IApprovalTaskDetails[];
+          initialTaskId: string;
       };
 
-const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedApprovalKey }) => {
+const orderedTaskIds = (
+    allTasks: Record<string, IExecutionTaskJson>,
+    startTaskId: string
+): string[] => {
+    const ordered: string[] = [];
+    const visited = new Set<string>();
+    const queue = startTaskId && allTasks[startTaskId] ? [startTaskId] : [];
+
+    while (queue.length) {
+        const taskId = queue.shift();
+        if (!taskId || visited.has(taskId) || !allTasks[taskId]) {
+            continue;
+        }
+        visited.add(taskId);
+        ordered.push(taskId);
+        Object.values(allTasks[taskId].nextPointers ?? {})
+            .flat()
+            .forEach((nextTaskId) => {
+                if (!visited.has(nextTaskId)) {
+                    queue.push(nextTaskId);
+                }
+            });
+    }
+
+    Object.keys(allTasks).forEach((taskId) => {
+        if (!visited.has(taskId)) {
+            ordered.push(taskId);
+        }
+    });
+    return ordered;
+};
+
+const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({
+    plan,
+    focusedApprovalKey,
+    focusedTaskKey,
+}) => {
     const { showSnackbar } = useSnackBar();
     const theme = useTheme();
     const approvals = useMemo(() => getExecutionApprovals(plan), [plan]);
-    const taskJsonByKey = useMemo(() => {
-        const byKey = new Map<string, IApprovalTaskDetails>();
-        Object.values(plan).forEach((planEntry) => {
-            const process = planEntry.process;
-            if (!process) {
-                return;
-            }
-            Object.entries(process.allTasks).forEach(([taskId, task]) => {
-                byKey.set(taskKey(process.processId, taskId), {
-                    taskId,
-                    task,
-                    context: process.processContext?.[taskId] ?? null,
-                });
-            });
-        });
-        return byKey;
-    }, [plan]);
-    const taskErrorsByProcessId = useMemo(() => {
+    const taskDetailsByProcessId = useMemo(() => {
         const byProcessId = new Map<string, IApprovalTaskDetails[]>();
         Object.values(plan).forEach((planEntry) => {
             const process = planEntry.process;
@@ -104,13 +117,11 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
             }
             byProcessId.set(
                 process.processId,
-                Object.entries(process.allTasks)
-                    .filter(([, task]) => task.stdErr?.length > 0)
-                    .map(([taskId, task]) => ({
-                        taskId,
-                        task,
-                        context: process.processContext?.[taskId] ?? null,
-                    }))
+                orderedTaskIds(process.allTasks, process.startTaskId).map((taskId) => ({
+                    taskId,
+                    task: process.allTasks[taskId],
+                    context: process.processContext?.[taskId] ?? null,
+                }))
             );
         });
         return byProcessId;
@@ -280,8 +291,15 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                             const approvedDate =
                                 approval.status === 'SUCCEEDED' ? formatApprovalDate(approval.endTimeMs) : '';
                             const isFocused = focusedApprovalKey === key;
-                            const taskDetails = taskJsonByKey.get(key);
-                            const taskJson = taskDetails?.task;
+                            const processTasks = taskDetailsByProcessId.get(approval.processId) ?? [];
+                            const focusedTaskId =
+                                isFocused && focusedTaskKey?.startsWith(`${approval.processId}:`)
+                                    ? focusedTaskKey.slice(approval.processId.length + 1)
+                                    : null;
+                            const initialTaskId =
+                                focusedTaskId && processTasks.some(({ taskId }) => taskId === focusedTaskId)
+                                    ? focusedTaskId
+                                    : approval.taskId;
 
                             return (
                                 <Box
@@ -354,7 +372,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                             )}
                                         </Box>
                                     )}
-                                    {(approval.description || taskJson || resourcePlan) && (
+                                    {(approval.description || processTasks.length || resourcePlan) && (
                                         <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} mt={0.5}>
                                             {approval.description && (
                                                 <Button
@@ -372,17 +390,15 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                                                     View description
                                                 </Button>
                                             )}
-                                            {taskJson && (
+                                            {processTasks.length > 0 && (
                                                 <Button
                                                     size="small"
                                                     variant="text"
                                                     onClick={() =>
                                                         setSelectedContext({
                                                             kind: 'advanced',
-                                                            json: taskJson,
-                                                            context: taskDetails?.context ?? null,
-                                                            taskErrors:
-                                                                taskErrorsByProcessId.get(approval.processId) ?? [],
+                                                            tasks: processTasks,
+                                                            initialTaskId,
                                                             summary: approval.summary,
                                                         })
                                                     }
@@ -476,7 +492,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                 open={selectedContext !== null}
                 onClose={() => setSelectedContext(null)}
                 fullWidth
-                maxWidth="md"
+                maxWidth="lg"
             >
                 <DialogTitle>
                     {selectedContext?.kind === 'advanced' ? 'Approval details' : 'Approval description'}
@@ -489,6 +505,7 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                 <DialogContent
                     dividers
                     sx={{
+                        padding: selectedContext?.kind === 'advanced' ? 0 : undefined,
                         '& p, & li, & a': {
                             overflowWrap: 'anywhere',
                             wordBreak: 'break-word',
@@ -502,44 +519,11 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({ plan, focusedA
                     }}
                 >
                     {selectedContext?.kind === 'advanced' ? (
-                        <Box maxHeight="65vh" minWidth={0} overflow="auto">
-                            {selectedContext.json.stdOut?.length > 0 && (
-                                <>
-                                    <Typography variant="body2" marginBottom={0.5}>
-                                        <b>Standard output</b>
-                                    </Typography>
-                                    <Box marginBottom={1.5} minWidth={0}>
-                                        <JsonPrettier data={selectedContext.json.stdOut} variant="light" />
-                                    </Box>
-                                </>
-                            )}
-                            {selectedContext.taskErrors.map(({ taskId, task }) => (
-                                <React.Fragment key={taskId}>
-                                    <Typography variant="body2" marginBottom={0.5}>
-                                        <b>Standard error — {taskId}</b> ({task.status})
-                                    </Typography>
-                                    <Box marginBottom={1.5} minWidth={0}>
-                                        <JsonPrettier data={task.stdErr} variant="light" />
-                                    </Box>
-                                </React.Fragment>
-                            ))}
-                            {selectedContext.context && (
-                                <>
-                                    <Typography variant="body2" marginBottom={0.5}>
-                                        <b>Process context</b>
-                                    </Typography>
-                                    <Box marginBottom={1.5} minWidth={0}>
-                                        <JsonPrettier data={selectedContext.context} variant="light" />
-                                    </Box>
-                                </>
-                            )}
-                            <Typography variant="body2" marginBottom={0.5}>
-                                <b>Complete task JSON</b>
-                            </Typography>
-                            <Box minWidth={0}>
-                                <JsonPrettier data={selectedContext.json} variant="light" />
-                            </Box>
-                        </Box>
+                        <AdvancedTaskExplorer
+                            key={`${selectedContext.summary}:${selectedContext.initialTaskId}`}
+                            tasks={selectedContext.tasks}
+                            initialTaskId={selectedContext.initialTaskId}
+                        />
                     ) : (
                         selectedContext && <ReactMarkdown>{selectedContext.description}</ReactMarkdown>
                     )}

@@ -10,10 +10,10 @@ interface INodeExecutionStatusProps {
 }
 
 const NodeExecutionStatus: React.FC<INodeExecutionStatusProps> = ({ node, plan }) => {
-    const focusedApprovalKey = useMemo(() => {
+    const { focusedApprovalKey, focusedTaskKey } = useMemo(() => {
         const taskId = node?.data?.taskJson?.label;
         if (!node || !taskId) {
-            return null;
+            return { focusedApprovalKey: null, focusedTaskKey: null };
         }
         const match = Object.entries(plan ?? {}).find(
             ([planId, planEntry]) =>
@@ -21,15 +21,22 @@ const NodeExecutionStatus: React.FC<INodeExecutionStatusProps> = ({ node, plan }
         );
         const process = match?.[1].process;
         if (!process) {
-            return null;
+            return { focusedApprovalKey: null, focusedTaskKey: null };
         }
+        const selectedTaskKey = `${process.processId}:${taskId}`;
         if (node.data?.taskJson?.task?.taskDefinitionId === GROUP_APPROVAL_TASK_DEFINITION_ID) {
-            return `${process.processId}:${taskId}`;
+            return {
+                focusedApprovalKey: selectedTaskKey,
+                focusedTaskKey: selectedTaskKey,
+            };
         }
         const approvalTaskId = Object.entries(process.allTasks ?? {}).find(
             ([, task]) => task.taskDefinitionId === GROUP_APPROVAL_TASK_DEFINITION_ID
         )?.[0];
-        return approvalTaskId ? `${process.processId}:${approvalTaskId}` : null;
+        return {
+            focusedApprovalKey: approvalTaskId ? `${process.processId}:${approvalTaskId}` : null,
+            focusedTaskKey: selectedTaskKey,
+        };
     }, [node?.id, plan]);
 
     return (
@@ -38,7 +45,11 @@ const NodeExecutionStatus: React.FC<INodeExecutionStatusProps> = ({ node, plan }
                 <b>Execution approvals</b>
             </Typography>
             <Box justifyContent="center" flex="1" height="100%" width="100%">
-                <ExecutionApprovals plan={plan} focusedApprovalKey={focusedApprovalKey} />
+                <ExecutionApprovals
+                    plan={plan}
+                    focusedApprovalKey={focusedApprovalKey}
+                    focusedTaskKey={focusedTaskKey}
+                />
             </Box>
         </Box>
     );
