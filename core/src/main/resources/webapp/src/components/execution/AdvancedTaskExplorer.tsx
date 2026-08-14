@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { IExecutionTaskJson, TExecutionStatus } from './types';
 import JsonPrettier from '../common/JsonPrettier';
+import { formatDuration } from './approvalUtils';
 
 export interface IApprovalTaskDetails {
     taskId: string;
@@ -130,19 +131,6 @@ const hasContent = (value: unknown): boolean => {
         return Object.keys(value).length > 0;
     }
     return true;
-};
-
-const formatDuration = (startTimeMs: number, endTimeMs: number): string | null => {
-    if (!startTimeMs || !endTimeMs || endTimeMs < startTimeMs) {
-        return null;
-    }
-    const seconds = Math.round((endTimeMs - startTimeMs) / 1000);
-    if (seconds < 60) {
-        return `${seconds}s`;
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainder = seconds % 60;
-    return remainder ? `${minutes}m ${remainder}s` : `${minutes}m`;
 };
 
 interface IAdvancedSectionProps {

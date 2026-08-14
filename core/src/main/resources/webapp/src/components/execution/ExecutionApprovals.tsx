@@ -20,7 +20,7 @@ import { useSnackBar } from '../../context/SnackbarContext';
 import { ITask } from '../task/types';
 import { IExecutionPlan, IExecutionTaskJson, TExecutionStatus } from './types';
 import {
-    formatApprovalDate,
+    formatApprovalTimestamp,
     formatApprovalWait,
     getExecutionApprovals,
 } from './approvalUtils';
@@ -288,8 +288,10 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({
                             const changesExpanded = expandedChanges.has(key);
                             const isAwaiting = approval.status === 'RUNNING' && !isBlocked;
                             const waitingLabel = isAwaiting ? formatApprovalWait(approval.startTimeMs, Date.now()) : '';
-                            const approvedDate =
-                                approval.status === 'SUCCEEDED' ? formatApprovalDate(approval.endTimeMs) : '';
+                            const approvedTimestamp =
+                                approval.status === 'SUCCEEDED'
+                                    ? formatApprovalTimestamp(approval.endTimeMs)
+                                    : '';
                             const isFocused = focusedApprovalKey === key;
                             const processTasks = taskDetailsByProcessId.get(approval.processId) ?? [];
                             const focusedTaskId =
@@ -337,13 +339,13 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({
                                                     {waitingLabel}
                                                 </Typography>
                                             ) : (
-                                                approvedDate && (
+                                                approvedTimestamp && (
                                                     <Typography
                                                         variant="caption"
                                                         color="text.secondary"
                                                         textAlign="right"
                                                     >
-                                                        Approved {approvedDate}
+                                                        Approved {approvedTimestamp}
                                                     </Typography>
                                                 )
                                             )}

@@ -50,6 +50,32 @@ export const formatApprovalDate = (endTimeMs: number): string => {
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
 };
 
+export const formatApprovalTimestamp = (endTimeMs: number): string => {
+    if (!endTimeMs) {
+        return '';
+    }
+    return new Date(endTimeMs).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    });
+};
+
+export const formatDuration = (startTimeMs: number, endTimeMs: number): string | null => {
+    if (!startTimeMs || !endTimeMs || endTimeMs < startTimeMs) {
+        return null;
+    }
+    const seconds = Math.round((endTimeMs - startTimeMs) / 1000);
+    if (seconds < 60) {
+        return `${seconds}s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return remainder ? `${minutes}m ${remainder}s` : `${minutes}m`;
+};
+
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 const readRecord = (value: unknown): Record<string, unknown> =>
