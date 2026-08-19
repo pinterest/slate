@@ -48,15 +48,20 @@ export default class StatsboardChart extends React.Component {
   }
 
   formatResponse(response) {
+    var seriesList = [];
+    if (Array.isArray(response)) {
+      seriesList = response;
+    } else if (response && Array.isArray(response.data)) {
+      seriesList = response.data;
+    }
     var seriesSet = new Set();
     var tempDatapointsObj = {};
-    for (var responseGroup of response) {
-      var datapointsForGroup = responseGroup.datapoints;
+    for (var responseGroup of seriesList) {
+      var datapointsForGroup = responseGroup.datapoints || [];
       if (datapointsForGroup.length === 0) {
         continue;
       }
-      var tags = Object.values(responseGroup['tags']);
-      var metric = responseGroup.metric;
+      var tags = Object.values(responseGroup.tags || {});
       var seriesName = 'y';
       if (tags.length > 0) {
         seriesName = tags[0];
