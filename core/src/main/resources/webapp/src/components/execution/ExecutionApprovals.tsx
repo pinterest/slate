@@ -295,7 +295,9 @@ const ExecutionApprovals: React.FC<IExecutionApprovalsProps> = ({
                             const isFocused = focusedApprovalKey === key;
                             const processTasks = taskDetailsByProcessId.get(approval.processId) ?? [];
                             const focusedTaskId =
-                                isFocused && focusedTaskKey?.startsWith(`${approval.processId}:`)
+                                isFocused &&
+                                approval.processId &&
+                                focusedTaskKey?.startsWith(`${approval.processId}:`)
                                     ? focusedTaskKey.slice(approval.processId.length + 1)
                                     : null;
                             const initialTaskId =
