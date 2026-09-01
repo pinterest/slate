@@ -179,9 +179,9 @@ const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
             */
     }, [workspaceLoaded, selectedTabId]);
 
-    const onSave = useCallback(() => {
+    const persistWorkspace = useCallback(() => {
         if (!reactFlowInstance) {
-            return;
+            return Promise.resolve();
         }
         const flowObj = reactFlowInstance.toObject();
         const data = {
@@ -198,12 +198,19 @@ const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
         };
         // When connectors are present rsInstance object contains a reference to a DOMNode which can't be saved directly using localForage.
         // So stringify it before storing
-        localforage.setItem(BuilderWorkspaceStorageKey, JSON.stringify(data));
+        return localforage.setItem(BuilderWorkspaceStorageKey, JSON.stringify(data));
+    }, [reactFlowInstance, selectedTabId, workspaceTabs]);
+
+    const onSave = useCallback(() => {
+        if (!reactFlowInstance) {
+            return;
+        }
+        persistWorkspace();
         showSnackbar({
             type: 'info',
             message: 'Saved locally',
         });
-    }, [reactFlowInstance, selectedTabId, workspaceTabs]);
+    }, [reactFlowInstance, persistWorkspace]);
 
     const onRestore = useCallback(async () => {
         // Avoid loading workspace if already loaded when navigating between tabs (or) when searching for a resource
@@ -606,9 +613,16 @@ const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
                     throw Error(response.statusText);
                 }
             })
-            .then((json) => {
+            .then(async (json) => {
                 setConfirmExecution(false);
                 if (json?.executionId) {
+                    // The redirect leaves the builder, so the canvas survives only in
+                    // memory; persist it first so a later reload restores it.
+                    try {
+                        await persistWorkspace();
+                    } catch (err) {
+                        console.error('Failed to persist workspace before redirect', err);
+                    }
                     navigate(`/executions/${json.executionId}`);
                     return;
                 }

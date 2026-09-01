@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Box } from '@mui/material';
 import PlanViewer from '../../topology/PlanViewer';
-import { IExecutionGraph, IExecutionPlan, TExecutionDetailTabKey } from './types';
+import { IExecutionGraph, IExecutionPlan, TExecutionDetailTabKey, TExecutionStatus } from './types';
 
 const UPDATE_FREQUENCY = 2000;
+const END_STATUSES: TExecutionStatus[] = ['SUCCEEDED', 'FAILED', 'CANCELLED'];
 
 interface IExecutionDetailProps {
     executionId: string;
@@ -54,7 +55,10 @@ const ExecutionDetails: React.FC<IExecutionDetailProps> = ({ executionId, defaul
         if (!executionInfo) {
             return;
         }
-        const enableUpdates = executionInfo.executionGraph.status == 'RUNNING';
+        // NOT_STARTED must poll too: the post-execute redirect lands here before
+        // the executor picks the graph up, and without polling the page never
+        // advances past that first fetch.
+        const enableUpdates = !END_STATUSES.includes(executionInfo.executionGraph.status);
         let intervalId: null | ReturnType<typeof setInterval> = null;
         if (enableUpdates) {
             intervalId = setInterval(() => {
