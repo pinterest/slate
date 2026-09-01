@@ -1,4 +1,5 @@
 import React, { useMemo, useState, Fragment, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { IWorkspaceTabData } from '../store/types';
 import {
@@ -74,6 +75,7 @@ function getWindowDimensions() {
 interface ITopologyBuilderProps {}
 const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const classes = useStyles();
     const { showSnackbar } = useSnackBar();
     const { showLoadingOverlay } = useLoadingSpinner();
@@ -605,6 +607,11 @@ const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
                 }
             })
             .then((json) => {
+                setConfirmExecution(false);
+                if (json?.executionId) {
+                    navigate(`/executions/${json.executionId}`);
+                    return;
+                }
                 setPlanInfo({
                     time: Date.now(),
                     executionGraph: json,
@@ -612,7 +619,6 @@ const TopologyBuilder: React.FC<ITopologyBuilderProps> = () => {
                     deltaGraph: graph,
                     isExecution: true,
                 });
-                setConfirmExecution(false);
                 setPlanDialog(true);
             })
             .catch((error) => {
